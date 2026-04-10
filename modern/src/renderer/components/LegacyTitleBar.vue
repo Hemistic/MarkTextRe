@@ -1,0 +1,246 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import type { AppBootstrap } from '@shared/contracts'
+
+interface WordCount {
+  word: number
+  paragraph: number
+  character: number
+  all: number
+}
+
+const props = defineProps<{
+  bootstrap: AppBootstrap | null
+  pathname: string | null
+  filename: string
+  dirty: boolean
+  wordCount: WordCount
+  hasDocument?: boolean
+  showTabBar?: boolean
+}>()
+
+const emit = defineEmits<{
+  'new-file': []
+  'open-file': []
+  'save-file': []
+}>()
+
+const order = ['word', 'paragraph', 'character', 'all'] as const
+const labelMap = {
+  word: { short: 'W', full: 'word' },
+  paragraph: { short: 'P', full: 'paragraph' },
+  character: { short: 'C', full: 'character' },
+  all: { short: 'A', full: 'character (all)' }
+}
+
+const currentMetric = ref<(typeof order)[number]>('word')
+
+const pathSegments = computed(() => {
+  if (!props.pathname) return []
+  return props.pathname
+    .split(/[\\/]+/)
+    .filter(Boolean)
+    .slice(0, -1)
+    .slice(-3)
+})
+
+const platform = computed(() => props.bootstrap?.platform ?? 'win32')
+
+const cycleMetric = () => {
+  const index = order.indexOf(currentMetric.value)
+  currentMetric.value = order[(index + 1) % order.length]
+}
+
+const minimize = async () => {
+  await window.marktext?.window?.minimize?.()
+}
+
+const maximize = async () => {
+  await window.marktext?.window?.maximize?.()
+}
+
+const closeWindow = async () => {
+  await window.marktext?.window?.close?.()
+}
+</script>
+
+<template>
+  <div>
+    <div class="title-bar-editor-bg" :class="{ 'tabs-visible': showTabBar }" />
+    <div class="title-bar active" :class="{ 'tabs-visible': showTabBar }">
+      <div class="title">
+        <span v-if="!filename">MarkText</span>
+        <span v-else>
+          <span v-for="(segment, index) in pathSegments" :key="`${segment}:${index}`">
+            {{ segment }}
+            <span class="separator">›</span>
+          </span>
+          <span class="filename">{{ filename }}</span>
+          <span class="save-dot" :class="{ show: dirty }" />
+        </span>
+      </div>
+
+      <div class="right-toolbar title-no-drag">
+        <button class="toolbar-button" type="button" @click="emit('new-file')">New</button>
+        <button class="toolbar-button" type="button" @click="emit('open-file')">Open</button>
+        <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file')">Save</button>
+        <button v-if="hasDocument" class="word-count" type="button" @click="cycleMetric">
+          {{ `${labelMap[currentMetric].short} ${wordCount[currentMetric]}` }}
+        </button>
+      </div>
+
+      <div v-if="platform !== 'darwin'" class="window-controls title-no-drag">
+        <button class="window-button" type="button" @click="minimize">_</button>
+        <button class="window-button" type="button" @click="maximize">□</button>
+        <button class="window-button close" type="button" @click="closeWindow">×</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.title-bar-editor-bg {
+  height: var(--titleBarHeight);
+  background: var(--editorBgColor);
+}
+
+.title-bar {
+  -webkit-app-region: drag;
+  user-select: none;
+  background: transparent;
+  height: var(--titleBarHeight);
+  box-sizing: border-box;
+  color: var(--editorColor50);
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  z-index: 20;
+  cursor: default;
+}
+
+.title-bar.active {
+  color: var(--editorColor);
+}
+
+.title {
+  padding: 0 300px 0 142px;
+  height: 100%;
+  line-height: var(--titleBarHeight);
+  font-size: 14px;
+  text-align: center;
+}
+
+.title > span {
+  display: block;
+  direction: rtl;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.filename {
+  color: var(--editorColor);
+}
+
+.separator {
+  margin: 0 6px;
+  color: var(--editorColor30);
+}
+
+.save-dot {
+  margin-left: 3px;
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--highlightThemeColor);
+  opacity: 0.7;
+  visibility: hidden;
+}
+
+.save-dot.show {
+  visibility: visible;
+}
+
+.right-toolbar {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  right: 138px;
+  width: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.toolbar-button {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--editorColor50);
+  line-height: 24px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+}
+
+.toolbar-button:hover:not(:disabled) {
+  background: var(--sideBarBgColor);
+  color: var(--sideBarTitleColor);
+}
+
+.toolbar-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.word-count {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--editorColor30);
+  text-align: center;
+  line-height: 24px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+}
+
+.word-count:hover {
+  background: var(--sideBarBgColor);
+  color: var(--sideBarTitleColor);
+}
+
+.title-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+.window-controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  display: flex;
+}
+
+.window-button {
+  width: 46px;
+  height: var(--titleBarHeight);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--editorColor70);
+  font-size: 12px;
+}
+
+.window-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.window-button.close:hover {
+  background: rgb(228, 79, 79);
+  color: white;
+}
+</style>

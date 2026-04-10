@@ -1,0 +1,22 @@
+{
+  "appId": "org.marktext.modern",
+  "productName": "MarkText Modern",
+  "directories": {
+    "output": "build",
+    "buildResources": "buildResources"
+  },
+  "files": [
+    "dist/**",
+    "dist-electron/**",
+    "package.json"
+  ],
+  "win": {
+    "target": "nsis"
+  },
+  "mac": {
+    "target": "dmg"
+  },
+  "linux": {
+    "target": "AppImage"
+  }
+}

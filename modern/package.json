@@ -1,0 +1,62 @@
+{
+  "name": "marktext-modern",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Modern Electron architecture scaffold for MarkText",
+  "type": "module",
+  "main": "dist-electron/index.js",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "dist": "npm run build && electron-builder --config electron-builder.json",
+    "start": "npm run build && electron .",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@marktext/file-icons": "^1.0.6",
+    "dompurify": "^2.3.6",
+    "electron": "^41.0.0",
+    "element-resize-detector": "^1.2.4",
+    "execall": "^2.0.0",
+    "flowchart.js": "^1.17.1",
+    "fuzzaldrin": "^2.1.0",
+    "github-markdown-css": "^3.0.1",
+    "html-tags": "^3.2.0",
+    "joplin-turndown-plugin-gfm": "^1.0.12",
+    "katex": "^0.15.3",
+    "mermaid": "^10.0.0",
+    "pinia": "^3.0.0",
+    "pako": "^2.1.0",
+    "path-browserify": "^1.0.1",
+    "popper.js": "^1.16.1",
+    "prismjs": "^1.27.0",
+    "snabbdom": "^3.4.0",
+    "snabbdom-to-html": "^7.0.0",
+    "snapsvg": "^0.5.1",
+    "turndown": "^7.1.1",
+    "underscore": "^1.13.2",
+    "unsplash-js": "^7.0.15",
+    "vega": "^5.22.1",
+    "vega-embed": "^6.20.8",
+    "vega-lite": "^5.2.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0",
+    "webfontloader": "^1.6.28"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "electron-builder": "^26.0.0",
+    "esbuild": "^0.28.0",
+    "rollup": "^4.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^8.0.0",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.0",
+    "vue-tsc": "^3.0.0"
+  }
+}

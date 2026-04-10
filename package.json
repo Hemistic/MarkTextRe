@@ -29,6 +29,11 @@
     "build:muya": "cd src/muya && webpack --progress --config webpack.config.js",
     "release:muya": "yarn run build:muya && cd src/muya && yarn publish",
     "rebuild": "electron-rebuild -f",
+    "modern:dev": "npm --prefix modern run dev",
+    "modern:build": "npm --prefix modern run build",
+    "modern:dist": "npm --prefix modern run dist",
+    "modern:start": "npm --prefix modern run start",
+    "modern:typecheck": "npm --prefix modern run typecheck",
     "gen-third-party": "node tools/generateThirdPartyLicense.js",
     "validate-licenses": "node tools/validateLicenses.js",
     "deobfuscateStackTrace": "node tools/deobfuscateStackTrace.js"
