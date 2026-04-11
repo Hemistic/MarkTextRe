@@ -11,11 +11,7 @@ import footerHeaderCss from '../assets/styles/headerFooterStyle.css'
 import { EXPORT_DOMPURIFY_CONFIG } from '../config'
 import { sanitize, unescapeHTML } from '../utils'
 import { validEmoji } from '../ui/emojis'
-
-export const getSanitizeHtml = (markdown, options) => {
-  const html = marked(markdown, options)
-  return sanitize(html, EXPORT_DOMPURIFY_CONFIG, false)
-}
+export { getSanitizeHtml } from './sanitizeHtml'
 
 const DIAGRAM_TYPE = [
   'mermaid',

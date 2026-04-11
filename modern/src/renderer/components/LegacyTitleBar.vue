@@ -1,20 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { AppBootstrap } from '@shared/contracts'
-
-interface WordCount {
-  word: number
-  paragraph: number
-  character: number
-  all: number
-}
+import type { DocumentWordCount } from '../features/editor/types'
+import { closeWindow, maximizeWindow, minimizeWindow } from '../services/window'
 
 const props = defineProps<{
   bootstrap: AppBootstrap | null
   pathname: string | null
   filename: string
   dirty: boolean
-  wordCount: WordCount
+  wordCount: DocumentWordCount
   hasDocument?: boolean
   showTabBar?: boolean
 }>()
@@ -23,6 +18,7 @@ const emit = defineEmits<{
   'new-file': []
   'open-file': []
   'save-file': []
+  'save-file-as': []
 }>()
 
 const order = ['word', 'paragraph', 'character', 'all'] as const
@@ -50,18 +46,6 @@ const cycleMetric = () => {
   const index = order.indexOf(currentMetric.value)
   currentMetric.value = order[(index + 1) % order.length]
 }
-
-const minimize = async () => {
-  await window.marktext?.window?.minimize?.()
-}
-
-const maximize = async () => {
-  await window.marktext?.window?.maximize?.()
-}
-
-const closeWindow = async () => {
-  await window.marktext?.window?.close?.()
-}
 </script>
 
 <template>
@@ -84,14 +68,15 @@ const closeWindow = async () => {
         <button class="toolbar-button" type="button" @click="emit('new-file')">New</button>
         <button class="toolbar-button" type="button" @click="emit('open-file')">Open</button>
         <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file')">Save</button>
+        <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file-as')">Save As</button>
         <button v-if="hasDocument" class="word-count" type="button" @click="cycleMetric">
           {{ `${labelMap[currentMetric].short} ${wordCount[currentMetric]}` }}
         </button>
       </div>
 
       <div v-if="platform !== 'darwin'" class="window-controls title-no-drag">
-        <button class="window-button" type="button" @click="minimize">_</button>
-        <button class="window-button" type="button" @click="maximize">□</button>
+        <button class="window-button" type="button" @click="minimizeWindow">_</button>
+        <button class="window-button" type="button" @click="maximizeWindow">□</button>
         <button class="window-button close" type="button" @click="closeWindow">×</button>
       </div>
     </div>
@@ -124,7 +109,7 @@ const closeWindow = async () => {
 }
 
 .title {
-  padding: 0 300px 0 142px;
+  padding: 0 380px 0 142px;
   height: 100%;
   line-height: var(--titleBarHeight);
   font-size: 14px;
@@ -168,7 +153,7 @@ const closeWindow = async () => {
   position: absolute;
   top: 0;
   right: 138px;
-  width: 260px;
+  width: 340px;
   display: flex;
   align-items: center;
   justify-content: flex-end;

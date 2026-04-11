@@ -106,6 +106,7 @@ import { guessClipboardFilePath } from '@/util/clipboard'
 import { getCssForOptions, getHtmlToc } from '@/util/pdf'
 import { addCommonStyle, setEditorWidth } from '@/util/theme'
 
+import 'muya/themes/prismjs/light.theme.css'
 import 'muya/themes/default.css'
 import '@/assets/themes/codemirror/one-dark.css'
 // import 'view-image/lib/imgViewer.css'

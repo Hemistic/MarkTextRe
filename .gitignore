@@ -2,6 +2,8 @@
 dist/
 */dist/*
 modern/dist-electron/
+modern/dist/
+modern/build/
 build/*
 static/themes/*
 src/muya/node_modules/

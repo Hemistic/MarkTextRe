@@ -1,6 +1,4 @@
-import katex from 'katex'
 import prism, { loadedLanguages, transformAliasToOrigin } from '../../../prism/'
-import 'katex/dist/contrib/mhchem.min.js'
 import { CLASS_OR_ID, DEVICE_MEMORY, PREVIEW_DOMPURIFY_CONFIG, HAS_TEXT_BLOCK_REG } from '../../../config'
 import { tokenizer } from '../../'
 import { snakeToCamel, sanitize, escapeHTML, getLongUniqueId, getImageInfo } from '../../../utils'
@@ -152,26 +150,27 @@ export default function renderLeafBlock (parent, block, activeBlocks, matches, u
         break
       }
       case 'multiplemath': {
-        const key = `${code}_display_math`
+        const cacheKey = `${code}_display_math`
+        const selectorKey = `#${block.key}`
+        const mathState = loadMathMap.get(cacheKey)
         selector += `.${CLASS_OR_ID.AG_CONTAINER_PREVIEW}`
         Object.assign(data.attrs, { spellcheck: 'false' })
         if (code === '') {
           children = '< Empty Mathematical Formula >'
           selector += `.${CLASS_OR_ID.AG_EMPTY}`
-        } else if (loadMathMap.has(key)) {
-          children = loadMathMap.get(key)
+        } else if (mathState && mathState.status === 'ready') {
+          children = htmlToVNode(mathState.html)
+        } else if (mathState && mathState.status === 'error') {
+          children = '< Invalid Mathematical Formula >'
+          selector += `.${CLASS_OR_ID.AG_MATH_ERROR}`
         } else {
-          try {
-            const html = katex.renderToString(code, {
-              displayMode: true
-            })
-
-            children = htmlToVNode(html)
-            loadMathMap.set(key, children)
-          } catch (err) {
-            children = '< Invalid Mathematical Formula >'
-            selector += `.${CLASS_OR_ID.AG_MATH_ERROR}`
-          }
+          children = code
+          this.pendingPreviewRenders.set(selectorKey, {
+            functionType: 'display-math',
+            cacheKey,
+            code,
+            displayMode: true
+          })
         }
         break
       }

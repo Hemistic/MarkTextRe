@@ -21,10 +21,61 @@ class StateRender {
     this.renderingTable = null
     this.renderingRowContainer = null
     this.container = null
+    this.pendingPreviewRenders = new Map()
+    this.scheduledPreviewRenders = new Set()
+    this.previewObserver = null
   }
 
   setContainer (container) {
     this.container = container
+    this.resetPreviewObserver()
+  }
+
+  resetPreviewObserver () {
+    if (this.previewObserver) {
+      this.previewObserver.disconnect()
+      this.previewObserver = null
+    }
+
+    if (
+      !this.container ||
+      typeof IntersectionObserver === 'undefined'
+    ) {
+      return
+    }
+
+    this.previewObserver = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) {
+          continue
+        }
+
+        this.previewObserver.unobserve(entry.target)
+        this.schedulePreviewRender(`#${entry.target.id}`, entry.target)
+      }
+    }, {
+      root: this.container,
+      rootMargin: '240px 0px'
+    })
+  }
+
+  schedulePreviewRender (key, target) {
+    if (this.scheduledPreviewRenders.has(key)) {
+      return
+    }
+
+    this.scheduledPreviewRenders.add(key)
+
+    const run = () => {
+      this.scheduledPreviewRenders.delete(key)
+      void this.renderPendingPreview(key, target)
+    }
+
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(run, { timeout: 300 })
+    } else {
+      setTimeout(run, 0)
+    }
   }
 
   // collect link reference definition
@@ -95,80 +146,135 @@ class StateRender {
     return selector
   }
 
-  async renderMermaid () {
-    if (this.mermaidCache.size) {
-      const mermaid = await loadRenderer('mermaid')
-      mermaid.initialize({
-        securityLevel: 'strict',
-        theme: this.muya.options.mermaidTheme
-      })
-      for (const [key, value] of this.mermaidCache.entries()) {
-        const { code } = value
-        const target = document.querySelector(key)
-        if (!target) {
-          continue
-        }
-        try {
-          mermaid.parse(code)
-          target.innerHTML = sanitize(code, PREVIEW_DOMPURIFY_CONFIG, true)
-          mermaid.init(undefined, target)
-        } catch (err) {
-          target.innerHTML = '< Invalid Mermaid Codes >'
-          target.classList.add(CLASS_OR_ID.AG_MATH_ERROR)
-        }
-      }
+  async renderMermaidTarget (target, code) {
+    const mermaid = await loadRenderer('mermaid')
+    mermaid.initialize({
+      securityLevel: 'strict',
+      theme: this.muya.options.mermaidTheme
+    })
 
-      this.mermaidCache.clear()
+    try {
+      mermaid.parse(code)
+      target.innerHTML = sanitize(code, PREVIEW_DOMPURIFY_CONFIG, true)
+      mermaid.init(undefined, target)
+    } catch (err) {
+      target.innerHTML = '< Invalid Mermaid Codes >'
+      target.classList.add(CLASS_OR_ID.AG_MATH_ERROR)
     }
   }
 
-  async renderDiagram () {
-    const cache = this.diagramCache
-    if (cache.size) {
-      const RENDER_MAP = {
-        flowchart: await loadRenderer('flowchart'),
-        sequence: await loadRenderer('sequence'),
-        plantuml: await loadRenderer('plantuml'),
-        'vega-lite': await loadRenderer('vega-lite')
+  async renderDiagramTarget (target, functionType, code) {
+    const render = await loadRenderer(functionType)
+    const options = {}
+
+    if (functionType === 'sequence') {
+      Object.assign(options, { theme: this.muya.options.sequenceTheme })
+    } else if (functionType === 'vega-lite') {
+      Object.assign(options, {
+        actions: false,
+        tooltip: false,
+        renderer: 'svg',
+        theme: this.muya.options.vegaTheme
+      })
+    }
+
+    try {
+      if (functionType === 'flowchart' || functionType === 'sequence') {
+        const diagram = render.parse(code)
+        target.innerHTML = ''
+        diagram.drawSVG(target, options)
+      } else if (functionType === 'plantuml') {
+        const diagram = render.parse(code)
+        target.innerHTML = ''
+        diagram.insertImgElement(target)
+      } else if (functionType === 'vega-lite') {
+        target.innerHTML = ''
+        await render(target, JSON.parse(code), options)
+      }
+    } catch (err) {
+      const invalidMessage = functionType === 'flowchart'
+        ? 'Flow Chart'
+        : functionType === 'vega-lite'
+          ? 'Vega-Lite'
+          : functionType === 'plantuml'
+            ? 'PlantUML'
+            : 'Sequence'
+      target.innerHTML = `< Invalid ${invalidMessage} Codes >`
+      target.classList.add(CLASS_OR_ID.AG_MATH_ERROR)
+    }
+  }
+
+  async renderMathTarget (target, cacheKey, code, displayMode) {
+    const katex = await loadRenderer('katex')
+
+    try {
+      const html = katex.renderToString(code, { displayMode })
+      this.loadMathMap.set(cacheKey, {
+        status: 'ready',
+        html
+      })
+      target.classList.remove(CLASS_OR_ID.AG_MATH_ERROR)
+      target.innerHTML = html
+    } catch (err) {
+      this.loadMathMap.set(cacheKey, {
+        status: 'error'
+      })
+      target.classList.add(CLASS_OR_ID.AG_MATH_ERROR)
+      target.textContent = displayMode
+        ? '< Invalid Mathematical Formula >'
+        : '< Invalid Inline Mathematical Formula >'
+    }
+  }
+
+  flushPendingPreviewRenders () {
+    for (const [key, value] of this.mermaidCache.entries()) {
+      this.pendingPreviewRenders.set(key, value)
+    }
+
+    for (const [key, value] of this.diagramCache.entries()) {
+      this.pendingPreviewRenders.set(key, value)
+    }
+
+    this.mermaidCache.clear()
+    this.diagramCache.clear()
+
+    for (const [key, preview] of this.pendingPreviewRenders.entries()) {
+      const target = document.querySelector(key)
+      if (!target) {
+        continue
       }
 
-      for (const [key, value] of cache.entries()) {
-        const target = document.querySelector(key)
-        if (!target) {
-          continue
-        }
-        const { code, functionType } = value
-        const render = RENDER_MAP[functionType]
-        const options = {}
-        if (functionType === 'sequence') {
-          Object.assign(options, { theme: this.muya.options.sequenceTheme })
-        } else if (functionType === 'vega-lite') {
-          Object.assign(options, {
-            actions: false,
-            tooltip: false,
-            renderer: 'svg',
-            theme: this.muya.options.vegaTheme
-          })
-        }
-        try {
-          if (functionType === 'flowchart' || functionType === 'sequence') {
-            const diagram = render.parse(code)
-            target.innerHTML = ''
-            diagram.drawSVG(target, options)
-          } else if (functionType === 'plantuml') {
-            const diagram = render.parse(code)
-            target.innerHTML = ''
-            diagram.insertImgElement(target)
-          } else if (functionType === 'vega-lite') {
-            await render(key, JSON.parse(code), options)
-          }
-        } catch (err) {
-          target.innerHTML = `< Invalid ${functionType === 'flowchart' ? 'Flow Chart' : 'Sequence'} Codes >`
-          target.classList.add(CLASS_OR_ID.AG_MATH_ERROR)
-        }
+      target.classList.remove(CLASS_OR_ID.AG_MATH_ERROR)
+
+      if (preview.functionType === 'inline-math' || preview.functionType === 'display-math') {
+        this.schedulePreviewRender(key, target)
+      } else if (this.previewObserver) {
+        this.previewObserver.observe(target)
+      } else {
+        this.schedulePreviewRender(key, target)
       }
-      this.diagramCache.clear()
     }
+  }
+
+  async renderPendingPreview (key, target) {
+    const preview = this.pendingPreviewRenders.get(key)
+    if (!preview || !target || !target.isConnected) {
+      return
+    }
+
+    this.pendingPreviewRenders.delete(key)
+
+    if (preview.functionType === 'inline-math' || preview.functionType === 'display-math') {
+      await this.renderMathTarget(target, preview.cacheKey, preview.code, preview.displayMode)
+      return
+    }
+
+    if (preview.functionType === 'mermaid') {
+      await this.renderMermaidTarget(target, preview.code)
+      return
+    }
+
+    await this.renderDiagramTarget(target, preview.functionType, preview.code)
   }
 
   render (blocks, activeBlocks, matches) {
@@ -181,8 +287,7 @@ class StateRender {
     const oldVdom = toVNode(rootDom)
 
     patch(oldVdom, newVdom)
-    this.renderMermaid()
-    this.renderDiagram()
+    this.flushPendingPreviewRenders()
     this.codeCache.clear()
   }
 
@@ -225,8 +330,7 @@ class StateRender {
       }
     }
 
-    this.renderMermaid()
-    this.renderDiagram()
+    this.flushPendingPreviewRenders()
     this.codeCache.clear()
   }
 
@@ -243,8 +347,7 @@ class StateRender {
     const rootDom = document.querySelector(selector)
     const oldVdom = toVNode(rootDom)
     patch(oldVdom, newVdom)
-    this.renderMermaid()
-    this.renderDiagram()
+    this.flushPendingPreviewRenders()
     this.codeCache.clear()
   }
 

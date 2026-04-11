@@ -7,6 +7,10 @@ const loadRenderer = async (name) => {
   if (!rendererCache.has(name)) {
     let m
     switch (name) {
+      case 'katex':
+        m = await import('../parser/render/katex')
+        rendererCache.set(name, m.default)
+        break
       case 'sequence':
         m = await import('../parser/render/sequence')
         rendererCache.set(name, m.default)
@@ -28,7 +32,7 @@ const loadRenderer = async (name) => {
         rendererCache.set(name, m.default)
         break
       default:
-        throw new Error(`Unknown diagram name ${name}`)
+        throw new Error(`Unknown renderer name ${name}`)
     }
   }
 

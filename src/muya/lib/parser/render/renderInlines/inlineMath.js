@@ -1,9 +1,5 @@
-import katex from 'katex'
-import 'katex/dist/contrib/mhchem.min.js'
 import { CLASS_OR_ID } from '../../../config'
 import { htmlToVNode } from '../snabbdom'
-
-import 'katex/dist/katex.min.css'
 
 export default function displayMath (h, cursor, block, token, outerClass) {
   const className = this.getClassName(outerClass, block, token, cursor)
@@ -24,21 +20,24 @@ export default function displayMath (h, cursor, block, token, outerClass) {
 
   const displayMode = false
   const key = `${math}_${type}`
+  const targetId = `ag-math-render-${block.key}-${start}-${end}`
+  const targetSelector = `#${targetId}`
   let mathVnode = null
   let previewSelector = `span.${CLASS_OR_ID.AG_MATH_RENDER}`
-  if (loadMathMap.has(key)) {
-    mathVnode = loadMathMap.get(key)
+  const mathState = loadMathMap.get(key)
+  if (mathState && mathState.status === 'ready') {
+    mathVnode = htmlToVNode(mathState.html)
+  } else if (mathState && mathState.status === 'error') {
+    mathVnode = '< Invalid Mathematical Formula >'
+    previewSelector += `.${CLASS_OR_ID.AG_MATH_ERROR}`
   } else {
-    try {
-      const html = katex.renderToString(math, {
-        displayMode
-      })
-      mathVnode = htmlToVNode(html)
-      loadMathMap.set(key, mathVnode)
-    } catch (err) {
-      mathVnode = '< Invalid Mathematical Formula >'
-      previewSelector += `.${CLASS_OR_ID.AG_MATH_ERROR}`
-    }
+    mathVnode = math
+    this.pendingPreviewRenders.set(targetSelector, {
+      functionType: 'inline-math',
+      cacheKey: key,
+      code: math,
+      displayMode
+    })
   }
 
   return [
@@ -48,7 +47,10 @@ export default function displayMath (h, cursor, block, token, outerClass) {
         attrs: { spellcheck: 'false' }
       }, content),
       h(previewSelector, {
-        attrs: { contenteditable: 'false' }
+        attrs: {
+          id: targetId,
+          contenteditable: 'false'
+        }
       }, mathVnode)
     ]),
     h(`span.${className}.${CLASS_OR_ID.AG_MATH_MARKER}`, endMarker)

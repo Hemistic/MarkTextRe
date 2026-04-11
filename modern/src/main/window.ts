@@ -1,17 +1,25 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BrowserWindow } from 'electron'
+import { installWindowCloseHandler } from './close-manager'
+import { attachWindowDevDiagnostics } from './webcontents'
+import {
+  getInitialWindowState,
+  installWindowStatePersistence
+} from './window-state'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export const createMainWindow = () => {
-  const preloadPath = path.join(__dirname, 'index.mjs')
+export const createMainWindow = async () => {
   const devServerUrl = process.env.VITE_DEV_SERVER_URL
   const isDev = Boolean(devServerUrl)
+  const preloadPath = isDev
+    ? path.resolve(__dirname, '../src/preload/preload.cjs')
+    : path.join(__dirname, 'preload.cjs')
+  const initialWindowState = await getInitialWindowState()
 
   const window = new BrowserWindow({
-    width: 1360,
-    height: 880,
+    ...initialWindowState.bounds,
     minWidth: 1024,
     minHeight: 640,
     backgroundColor: '#f4f1e8',
@@ -29,25 +37,17 @@ export const createMainWindow = () => {
   })
 
   window.once('ready-to-show', () => {
+    if (initialWindowState.isMaximized) {
+      window.maximize()
+    }
     window.show()
   })
 
+  installWindowCloseHandler(window)
+  installWindowStatePersistence(window)
+
   if (isDev) {
-    window.webContents.on('console-message', (_event, level, message, line, sourceId) => {
-      console.log(`[renderer:${level}] ${message} (${sourceId}:${line})`)
-    })
-
-    window.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
-      console.error(`[renderer:load-fail] ${errorCode} ${errorDescription} ${validatedURL}`)
-    })
-
-    window.webContents.on('render-process-gone', (_event, details) => {
-      console.error('[renderer:gone]', details)
-    })
-
-    window.webContents.on('preload-error', (_event, preloadPath, error) => {
-      console.error(`[preload:error] ${preloadPath}`, error)
-    })
+    attachWindowDevDiagnostics(window)
   }
 
   if (isDev) {

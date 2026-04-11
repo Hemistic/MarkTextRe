@@ -1,20 +1,43 @@
 import { app, BrowserWindow } from 'electron'
 import { registerIpcHandlers } from './ipc'
+import { installApplicationMenu } from './menu'
+import { createOpenPathCoordinator } from './open-paths'
 import { createMainWindow } from './window'
 
-let mainWindow: ReturnType<typeof createMainWindow> | null = null
+let mainWindow: BrowserWindow | null = null
+const openPathCoordinator = createOpenPathCoordinator({
+  createWindow: createMainWindow,
+  getWindow: () => mainWindow,
+  setWindow: window => {
+    mainWindow = window
+  }
+})
 
 const bootstrap = async () => {
   registerIpcHandlers()
-  mainWindow = createMainWindow()
+  await installApplicationMenu()
+  mainWindow = await createMainWindow()
+  openPathCoordinator.attachWindow(mainWindow)
 }
 
-app.whenReady().then(() => {
-  void bootstrap()
+const hasSingleInstanceLock = openPathCoordinator.acquireSingleInstanceLock()
+
+if (!hasSingleInstanceLock) {
+  app.quit()
+}
+
+openPathCoordinator.registerAppEventHandlers()
+
+app.whenReady().then(async () => {
+  await openPathCoordinator.captureStartupPaths(process.argv)
+  await bootstrap()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createMainWindow()
+      void createMainWindow().then(window => {
+        mainWindow = window
+        openPathCoordinator.attachWindow(window)
+      })
     }
   })
 })

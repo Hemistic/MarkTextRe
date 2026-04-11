@@ -1,34 +1,19 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import 'legacy-muya/themes/prismjs/light.theme.css'
 import 'legacy-muya/themes/default.css'
+import type { EditorChangePayload } from '../features/editor/types'
 
 const props = defineProps<{
+  documentId: string
   modelValue: string
-}>()
-
-interface MuyaWordCount {
-  word: number
-  paragraph: number
-  character: number
-  all: number
-}
-
-interface MuyaTocItem {
-  content: string
-  lvl: number
-}
-
-interface MuyaChangePayload {
-  markdown: string
-  wordCount?: MuyaWordCount
-  toc?: MuyaTocItem[]
   cursor?: unknown
   history?: unknown
-}
+}>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'editor-change': [payload: MuyaChangePayload]
+  'editor-change': [payload: EditorChangePayload]
 }>()
 
 const host = ref<HTMLElement | null>(null)
@@ -36,6 +21,29 @@ const loadError = ref('')
 let editor: any = null
 let applyingExternalUpdate = false
 let lastMarkdown = props.modelValue
+
+const restoreEditorState = (markdown: string, cursor?: unknown, history?: unknown) => {
+  if (!editor) return
+
+  applyingExternalUpdate = true
+  lastMarkdown = markdown
+
+  try {
+    if (cursor) {
+      editor.setMarkdown(markdown, cursor, true)
+    } else {
+      editor.setMarkdown(markdown)
+    }
+
+    if (history && typeof editor.setHistory === 'function') {
+      editor.setHistory(history)
+    }
+  } finally {
+    queueMicrotask(() => {
+      applyingExternalUpdate = false
+    })
+  }
+}
 
 onMounted(async () => {
   if (!host.value) return
@@ -61,7 +69,9 @@ onMounted(async () => {
       }
     }
 
-    editor.on('change', (payload: MuyaChangePayload) => {
+    restoreEditorState(props.modelValue, props.cursor, props.history)
+
+    editor.on('change', (payload: EditorChangePayload) => {
       const { markdown } = payload
       lastMarkdown = markdown
       emit('editor-change', payload)
@@ -81,12 +91,7 @@ watch(
   markdown => {
     if (!editor || markdown === lastMarkdown) return
 
-    applyingExternalUpdate = true
-    lastMarkdown = markdown
-    editor.setMarkdown(markdown)
-    queueMicrotask(() => {
-      applyingExternalUpdate = false
-    })
+    restoreEditorState(markdown, props.cursor, props.history)
   }
 )
 

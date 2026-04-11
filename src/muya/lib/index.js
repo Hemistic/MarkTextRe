@@ -9,9 +9,22 @@ import ClickEvent from './eventHandler/clickEvent'
 import { CLASS_OR_ID, MUYA_DEFAULT_OPTION } from './config'
 import { wordCount } from './utils'
 import ExportMarkdown from './utils/exportMarkdown'
-import ExportHtml from './utils/exportHtml'
+import { getCodeMirrorCursor, addCursorToMarkdown, importCursor } from './utils/markdownCursor'
+import { extractImagesFromMarkdown } from './utils/markdownImages'
+import { importMarkdown as importMarkdownState } from './utils/markdownState'
 import ToolTip from './ui/tooltip'
 import './assets/styles/index.css'
+
+let exportHtmlModulePromise = null
+
+const loadExportHtml = async () => {
+  if (!exportHtmlModulePromise) {
+    exportHtmlModulePromise = import('./utils/exportHtml')
+  }
+
+  const module = await exportHtmlModulePromise
+  return module.default
+}
 
 class Muya {
   static plugins = []
@@ -147,13 +160,15 @@ class Muya {
     return this.contentState.history.clearHistory()
   }
 
-  exportStyledHTML (options) {
+  async exportStyledHTML (options) {
     const { markdown } = this
+    const ExportHtml = await loadExportHtml()
     return new ExportHtml(markdown, this).generate(options)
   }
 
-  exportHtml () {
+  async exportHtml () {
     const { markdown } = this
+    const ExportHtml = await loadExportHtml()
     return new ExportHtml(markdown, this).renderHtml()
   }
 
@@ -162,19 +177,19 @@ class Muya {
   }
 
   getCursor () {
-    return this.contentState.getCodeMirrorCursor()
+    return getCodeMirrorCursor(this.contentState)
   }
 
   setMarkdown (markdown, cursor, isRenderCursor = true) {
     let newMarkdown = markdown
     let isValid = false
     if (cursor && cursor.anchor && cursor.focus) {
-      const cursorInfo = this.contentState.addCursorToMarkdown(markdown, cursor)
+      const cursorInfo = addCursorToMarkdown(markdown, cursor)
       newMarkdown = cursorInfo.markdown
       isValid = cursorInfo.isValid
     }
-    this.contentState.importMarkdown(newMarkdown)
-    this.contentState.importCursor(cursor && isValid)
+    importMarkdownState(this.contentState, newMarkdown)
+    importCursor(this.contentState, cursor && isValid)
     this.contentState.render(isRenderCursor)
     setTimeout(() => {
       this.dispatchChange()
@@ -355,7 +370,7 @@ class Muya {
    * @param {string} markdown you want to extract images from this markdown.
    */
   extractImages (markdown = this.markdown) {
-    return this.contentState.extractImages(markdown)
+    return extractImagesFromMarkdown(this.contentState, markdown)
   }
 
   copyAsMarkdown () {

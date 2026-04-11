@@ -3,27 +3,12 @@ import filesIcon from '@legacy-assets/icons/files.svg'
 import searchIcon from '@legacy-assets/icons/search.svg'
 import tocIcon from '@legacy-assets/icons/toc.svg'
 import settingIcon from '@legacy-assets/icons/setting.svg'
-
-interface RecentDocument {
-  pathname: string
-  filename: string
-}
-
-interface HeadingItem {
-  depth: number
-  text: string
-}
-
-interface TabItem {
-  id: string
-  filename: string
-  pathname: string | null
-  dirty: boolean
-}
+import type { RecentDocument } from '@shared/contracts'
+import type { HeadingItem, SidebarTabItem } from '../features/editor/types'
 
 const props = defineProps<{
   mode: 'files' | 'search' | 'toc' | ''
-  tabs: TabItem[]
+  tabs: SidebarTabItem[]
   activeTabId: string | null
   recentDocuments: RecentDocument[]
   headings: HeadingItem[]

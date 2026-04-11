@@ -1,39 +1,28 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { storeToRefs } from 'pinia'
+import { defineAsyncComponent } from 'vue'
 import LegacyRecent from '../components/LegacyRecent.vue'
 import LegacySidebar from '../components/LegacySidebar.vue'
 import LegacyTabs from '../components/LegacyTabs.vue'
 import LegacyTitleBar from '../components/LegacyTitleBar.vue'
-import MuyaEditor from '../components/MuyaEditor.vue'
-import { useEditorStore } from '../stores/editor'
+import { useEditorWorkspace } from '../features/editor/useEditorWorkspace'
 
-const editor = useEditorStore()
+const AsyncMuyaEditor = defineAsyncComponent(() => import('../components/MuyaEditor.vue'))
+
 const {
+  editor,
   bootstrap,
-  viewMode,
   tabs,
   activeTabId,
   activeDocument,
   recentDocuments,
-  headings
-} = storeToRefs(editor)
-
-const sideBarMode = ref<'files' | 'search' | 'toc' | ''>('files')
-const titleFilename = computed(() => activeDocument.value?.filename ?? '')
-const titlePathname = computed(() => activeDocument.value?.pathname ?? null)
-const titleDirty = computed(() => activeDocument.value?.dirty ?? false)
-const titleWordCount = computed(() => activeDocument.value?.wordCount ?? {
-  word: 0,
-  paragraph: 0,
-  character: 0,
-  all: 0
-})
-const showHome = computed(() => viewMode.value === 'home' || !activeDocument.value)
-
-onMounted(() => {
-  void editor.loadBootstrap()
-})
+  headings,
+  sideBarMode,
+  titleFilename,
+  titlePathname,
+  titleDirty,
+  titleWordCount,
+  showHome
+} = useEditorWorkspace()
 </script>
 
 <template>
@@ -62,6 +51,7 @@ onMounted(() => {
         @new-file="editor.createTab"
         @open-file="editor.openDocument"
         @save-file="editor.saveActiveDocument"
+        @save-file-as="editor.saveActiveDocumentAs"
       />
 
       <div class="editor-with-tabs">
@@ -84,8 +74,13 @@ onMounted(() => {
         />
 
         <div v-else-if="activeDocument" class="editor-content">
-          <MuyaEditor
+          <component
+            :is="AsyncMuyaEditor"
+            :key="activeDocument.id"
+            :document-id="activeDocument.id"
             :model-value="activeDocument.markdown"
+            :cursor="activeDocument.cursor"
+            :history="activeDocument.history"
             @update:model-value="editor.updateActiveMarkdown"
             @editor-change="editor.applyActiveEditorState"
           />

@@ -1,13 +1,8 @@
 <script setup lang="ts">
-interface TabItem {
-  id: string
-  filename: string
-  pathname: string | null
-  dirty: boolean
-}
+import type { SidebarTabItem } from '../features/editor/types'
 
 defineProps<{
-  tabs: TabItem[]
+  tabs: SidebarTabItem[]
   activeTabId: string
 }>()
 
