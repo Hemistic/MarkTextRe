@@ -38,8 +38,19 @@ export const createLegacyMainCommandAdapter = (
     )
   }
 
+  const dispatchOpenFolder = (pathname: string, targetWindow?: BrowserWindow) => {
+    dispatchCommand(
+      {
+        command: 'open-folder',
+        pathname
+      },
+      () => targetWindow ?? resolveDefaultTargetWindow()
+    )
+  }
+
   return {
     dispatchAppCommand,
+    dispatchOpenFolder,
     dispatchOpenPath
   }
 }

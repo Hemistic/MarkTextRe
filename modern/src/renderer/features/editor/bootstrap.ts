@@ -1,3 +1,4 @@
+import type { SettingsState } from '@shared/contracts'
 import type { ComputedRef } from 'vue'
 import { restoreEditorStateFromBootstrap } from './session'
 import type { EditorStateRefs } from './state'
@@ -10,7 +11,8 @@ import {
 export const loadEditorBootstrapIntoState = async (
   state: EditorStateRefs,
   hasDirtyDocuments: ComputedRef<boolean>,
-  runtimeServices: EditorBootstrapRuntimeServices = createEditorBootstrapRuntimeServices()
+  runtimeServices: EditorBootstrapRuntimeServices = createEditorBootstrapRuntimeServices(),
+  startupSettings?: Pick<SettingsState, 'defaultDirectoryToOpen' | 'startUpAction'> | null
 ) => {
   const bootstrapState = await runtimeServices.loadBootstrapState()
   if (!bootstrapState) {
@@ -18,7 +20,7 @@ export const loadEditorBootstrapIntoState = async (
     return false
   }
 
-  const restoredState = restoreEditorStateFromBootstrap(bootstrapState)
+  const restoredState = restoreEditorStateFromBootstrap(bootstrapState, startupSettings)
   applyRestoredEditorState(state, restoredState)
   await runtimeServices.syncDirtyState(hasDirtyDocuments.value)
   return true

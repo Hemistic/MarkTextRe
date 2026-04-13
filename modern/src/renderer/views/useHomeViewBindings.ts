@@ -1,4 +1,4 @@
-import type { Ref } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
 import type { HomeViewActions } from './homeViewActions'
 import type { EditorWorkspaceViewState } from '../features/editor/workspaceViewSupport'
 import type { HomeSearchState } from './useHomeSearch'
@@ -17,6 +17,7 @@ interface UseHomeViewBindingsInput {
   actions: HomeViewActions
   muyaEditor: Ref<MuyaEditorExpose | null>
   search: HomeSearchState
+  showTabBar: ComputedRef<boolean>
   sideBar: Ref<SidebarExpose | null>
   view: EditorWorkspaceViewState
 }
@@ -25,6 +26,7 @@ export const useHomeViewBindings = ({
   actions,
   muyaEditor,
   search,
+  showTabBar,
   sideBar,
   view
 }: UseHomeViewBindingsInput) => {
@@ -43,13 +45,14 @@ export const useHomeViewBindings = ({
   })
   const titleBarBindings = createTitleBarBindings({
     actions,
+    showTabBar,
     view
   })
   const recentBindings = createRecentBindings({
     actions,
     view
   })
-  const flags = createHomeFlags({ view })
+  const flags = createHomeFlags({ showTabBar, view })
   const refs = createHomeRefs({
     muyaEditor,
     sideBar

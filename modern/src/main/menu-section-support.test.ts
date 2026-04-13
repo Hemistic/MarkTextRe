@@ -22,13 +22,13 @@ describe('menu-section-support', () => {
       dispatchAppCommand
     )
 
-    expect(items[2]).toEqual({
+    expect(items[3]).toEqual({
       label: 'Open Recent',
       submenu: [{ label: 'notes.md' }]
     })
 
     items[0]?.click?.(undefined as never, undefined as never, undefined as never)
-    items[4]?.click?.(undefined as never, undefined as never, undefined as never)
+    items[5]?.click?.(undefined as never, undefined as never, undefined as never)
 
     expect(dispatchAppCommand).toHaveBeenNthCalledWith(1, 'new-file')
     expect(dispatchAppCommand).toHaveBeenNthCalledWith(2, 'save-file')

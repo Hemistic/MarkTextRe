@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import type { EditorTab } from './types'
 import {
@@ -111,14 +112,79 @@ describe('files', () => {
     expect(saveMarkdown).toHaveBeenCalledWith({
       pathname: 'D:/docs/example.md',
       filename: 'example.md',
-      markdown: '# Example\n'
+      markdown: '# Example\n',
+      encoding: undefined,
+      lineEnding: undefined,
+      adjustLineEndingOnSave: undefined,
+      trimTrailingNewline: undefined
     })
     expect(saveMarkdownAs).toHaveBeenCalledWith({
       pathname: 'D:/docs/example.md',
       filename: 'example.md',
-      markdown: '# Example\n'
+      markdown: '# Example\n',
+      encoding: undefined,
+      lineEnding: undefined,
+      adjustLineEndingOnSave: undefined,
+      trimTrailingNewline: undefined
     })
     expect(saved?.pathname).toBe('D:/docs/example.md')
     expect(savedAs?.pathname).toBe('D:/docs/example-copy.md')
+  })
+
+  it('uses current settings defaults when first saving an untitled tab', async () => {
+    const saveMarkdown = vi.fn(async () => ({
+      pathname: 'D:/docs/example.md',
+      filename: 'example.md'
+    }))
+    const runtimeServices = {
+      openMarkdown: vi.fn(async () => null),
+      openMarkdownAtPath: vi.fn(async () => null),
+      saveMarkdown,
+      saveMarkdownAs: vi.fn(async () => null)
+    }
+
+    await saveTabDocument(createTab(), false, runtimeServices)
+
+    expect(saveMarkdown).toHaveBeenCalledWith({
+      pathname: null,
+      filename: 'untitled-1.md',
+      markdown: '# Example\n'
+    })
+  })
+
+  it('sanitizes reactive encoding metadata before saving over IPC', async () => {
+    const saveMarkdown = vi.fn(async () => ({
+      pathname: 'D:/docs/example.md',
+      filename: 'example.md'
+    }))
+    const runtimeServices = {
+      openMarkdown: vi.fn(async () => null),
+      openMarkdownAtPath: vi.fn(async () => null),
+      saveMarkdown,
+      saveMarkdownAs: vi.fn(async () => null)
+    }
+
+    await saveTabDocument(createTab({
+      pathname: 'D:/docs/example.md',
+      filename: 'example.md',
+      kind: 'file',
+      encoding: reactive({
+        encoding: 'utf8',
+        isBom: false
+      })
+    }), false, runtimeServices)
+
+    expect(saveMarkdown).toHaveBeenCalledWith({
+      pathname: 'D:/docs/example.md',
+      filename: 'example.md',
+      markdown: '# Example\n',
+      encoding: {
+        encoding: 'utf8',
+        isBom: false
+      },
+      lineEnding: undefined,
+      adjustLineEndingOnSave: undefined,
+      trimTrailingNewline: undefined
+    })
   })
 })

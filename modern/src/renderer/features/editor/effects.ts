@@ -3,6 +3,7 @@ import type { ComputedRef, Ref } from 'vue'
 import type { EditorViewMode } from '@shared/contracts'
 import type { EditorTab } from './types'
 import {
+  createAutoSaveController,
   createDelayedTaskScheduler,
   createEditorSessionPersistenceTask,
   createWindowCloseCoordinator
@@ -14,22 +15,29 @@ import {
 } from './effectRuntimeServices'
 
 interface EditorEffectState {
+  autoSaveSettings: ComputedRef<{
+    autoSave: boolean
+    autoSaveDelay: number
+  }>
   bootstrapLoaded: Ref<boolean>
   viewMode: Ref<EditorViewMode>
   tabs: Ref<EditorTab[]>
   activeTabId: Ref<string | null>
   untitledSequence: Ref<number>
   hasDirtyDocuments: ComputedRef<boolean>
+  saveDocument: (id: string) => Promise<unknown>
   saveAllDirtyDocuments: () => Promise<boolean>
 }
 
 export const setupEditorEffects = ({
+  autoSaveSettings,
   bootstrapLoaded,
   viewMode,
   tabs,
   activeTabId,
   untitledSequence,
   hasDirtyDocuments,
+  saveDocument,
   saveAllDirtyDocuments
 }: EditorEffectState, runtimeServices: EditorEffectRuntimeServices = createEditorEffectRuntimeServices()) => {
   const sessionSnapshot = computed(() => createSessionSnapshotKey(
@@ -41,6 +49,11 @@ export const setupEditorEffects = ({
   const sessionPersistenceScheduler = createDelayedTaskScheduler({
     onError: error => {
       console.error('[modern] failed to persist session state', error)
+    }
+  })
+  const autoSaveController = createAutoSaveController(saveDocument, {
+    onError: error => {
+      console.error('[modern] failed to auto-save document', error)
     }
   })
 
@@ -66,6 +79,17 @@ export const setupEditorEffects = ({
     schedulePersistSessionState()
   })
 
+  watch([tabs, autoSaveSettings], ([nextTabs, nextSettings]) => {
+    autoSaveController.sync({
+      autoSave: nextSettings.autoSave,
+      autoSaveDelay: nextSettings.autoSaveDelay,
+      tabs: nextTabs
+    })
+  }, {
+    deep: true,
+    immediate: true
+  })
+
   if (typeof window !== 'undefined') {
     runtimeServices.registerWindowCloseCoordinator(createWindowCloseCoordinator(
       () => tabs.value,
@@ -74,6 +98,7 @@ export const setupEditorEffects = ({
   }
 
   return () => {
+    autoSaveController.dispose()
     sessionPersistenceScheduler.dispose()
   }
 }

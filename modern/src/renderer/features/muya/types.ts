@@ -1,5 +1,5 @@
 import type { EditorChangePayload } from '../editor/types'
-import type { MuyaEditorOptions } from './editorOptions'
+import type { MuyaEditorOptions, MuyaEditorSettings } from './editorOptions'
 
 export interface MuyaEditorInstance {
   ready?: Promise<void>
@@ -8,6 +8,7 @@ export interface MuyaEditorInstance {
   undo?: () => void
   redo?: () => void
   search?: (value: string, options?: Record<string, unknown>) => unknown[]
+  replace?: (value: string, options?: Record<string, unknown>) => unknown[]
   find?: (action: 'pre' | 'next') => unknown[]
   on: (event: 'change', handler: (payload: EditorChangePayload) => void) => void
   contentState?: {
@@ -24,8 +25,11 @@ export interface MuyaEditorInstance {
 export interface CreateMuyaEditorOptions {
   host: HTMLElement
   markdown: string
+  pathname?: string | null
+  workspaceRootPath?: string | null
   cursor?: unknown
   history?: unknown
+  settings?: Partial<MuyaEditorSettings>
   onChange: (payload: EditorChangePayload) => void
 }
 

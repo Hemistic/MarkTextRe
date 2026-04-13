@@ -8,10 +8,12 @@ import {
   getRendererLoadTarget,
   resolvePreloadPath
 } from './window-support'
+import { applyWindowSettings } from './window-settings'
 import {
   getInitialWindowState,
   installWindowStatePersistence
 } from './window-state'
+import { readSettingsState } from './settings-storage'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -23,12 +25,14 @@ export const createMainWindow = async () => {
     currentDirname: __dirname
   })
   const initialWindowState = await getInitialWindowState()
+  const settings = await readSettingsState()
 
   const window = new BrowserWindow(createMainWindowOptions({
     initialBounds: initialWindowState.bounds,
     isDev,
     platform: process.platform,
-    preloadPath
+    preloadPath,
+    titleBarStyle: settings.titleBarStyle
   }))
 
   window.once('ready-to-show', () => {
@@ -41,6 +45,7 @@ export const createMainWindow = async () => {
   installWindowCloseHandler(window)
   installWindowStatePersistence(window)
   attachWindowContextMenu(window)
+  applyWindowSettings(window, settings)
 
   if (isDev) {
     attachWindowDevDiagnostics(window)

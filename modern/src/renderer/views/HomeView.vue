@@ -2,13 +2,13 @@
 import { defineAsyncComponent } from 'vue'
 import LegacyRecent from '../components/LegacyRecent.vue'
 import LegacySidebar from '../components/LegacySidebar.vue'
-import LegacyTabs from '../components/LegacyTabs.vue'
 import LegacyTitleBar from '../components/LegacyTitleBar.vue'
+import SettingsPanel from '../components/SettingsPanel.vue'
 import { useHomeViewService } from './useHomeViewService'
 
 const AsyncMuyaEditor = defineAsyncComponent(() => import('../components/MuyaEditor.vue'))
 
-const { bindings, isSettingsOpen, closeSettings } = useHomeViewService()
+const { bindings, isSettingsOpen, closeSettings, settingsState } = useHomeViewService()
 const {
   editorHandlers,
   editorProps,
@@ -18,8 +18,6 @@ const {
   refs,
   sidebarHandlers,
   sidebarProps,
-  tabsHandlers,
-  tabsProps,
   titleBarHandlers,
   titleBarProps
 } = bindings
@@ -29,22 +27,35 @@ const {
   <div class="editor-container">
     <LegacySidebar
       :ref="refs.sideBar"
+      :active-pathname="sidebarProps.activePathname"
       :mode="sidebarProps.mode"
+      :open-pathnames="sidebarProps.openPathnames"
+      :project-tree="sidebarProps.projectTree"
       :tabs="sidebarProps.tabs"
       :active-tab-id="sidebarProps.activeTabId"
       :recent-documents="sidebarProps.recentDocuments"
       :toc-items="sidebarProps.tocItems"
       :search-query="sidebarProps.searchQuery"
+      :search-error="sidebarProps.searchError"
+      :search-options="sidebarProps.searchOptions"
       :search-total="sidebarProps.searchTotal"
       :search-active-index="sidebarProps.searchActiveIndex"
+      :replace-query="sidebarProps.replaceQuery"
       @update:mode="sidebarHandlers.updateMode"
       @select-tab="sidebarHandlers.selectTab"
+      @close-tab="sidebarHandlers.closeTab"
       @open-recent="sidebarHandlers.openRecent"
       @open-file="sidebarHandlers.openFile"
+      @open-folder="sidebarHandlers.openFolder"
+      @open-path="sidebarHandlers.openPath"
       @new-file="sidebarHandlers.newFile"
       @open-settings="sidebarHandlers.openSettings"
       @select-heading="sidebarHandlers.selectHeading"
       @update:search-query="sidebarHandlers.updateSearchQuery"
+      @update:replace-query="sidebarHandlers.updateReplaceQuery"
+      @toggle-search-option="sidebarHandlers.toggleSearchOption"
+      @replace-current="sidebarHandlers.replaceCurrent"
+      @replace-all="sidebarHandlers.replaceAll"
       @search-next="sidebarHandlers.searchNext"
       @search-prev="sidebarHandlers.searchPrev"
     />
@@ -57,9 +68,11 @@ const {
         :dirty="titleBarProps.dirty"
         :word-count="titleBarProps.wordCount"
         :has-document="titleBarProps.hasDocument"
+        :show-path-segments="titleBarProps.showPathSegments"
         :show-tab-bar="titleBarProps.showTabBar"
         @new-file="titleBarHandlers.newFile"
         @open-file="titleBarHandlers.openFile"
+        @open-folder="titleBarHandlers.openFolder"
         @save-file="titleBarHandlers.saveFile"
         @save-file-as="titleBarHandlers.saveFileAs"
         @toggle-devtools="titleBarHandlers.toggleDevTools"
@@ -69,15 +82,6 @@ const {
       />
 
       <div class="editor-with-tabs">
-        <LegacyTabs
-          v-if="flags.hasTabs"
-          :tabs="tabsProps.tabs"
-          :active-tab-id="tabsProps.activeTabId"
-          @select="tabsHandlers.select"
-          @close="tabsHandlers.close"
-          @create="tabsHandlers.create"
-        />
-
         <LegacyRecent
           v-if="flags.showHome"
           :recent-documents="recentProps.recentDocuments"
@@ -94,8 +98,11 @@ const {
             :key="editorProps.documentId"
             :document-id="editorProps.documentId"
             :model-value="editorProps.modelValue"
+            :pathname="editorProps.pathname"
+            :workspace-root-path="editorProps.workspaceRootPath"
             :cursor="editorProps.cursor"
             :history="editorProps.history"
+            :settings="settingsState"
             @editor-change="editorHandlers.editorChange"
           />
         </div>
@@ -103,14 +110,7 @@ const {
     </div>
 
     <div v-if="isSettingsOpen" class="settings-overlay" @click.self="closeSettings">
-      <section class="settings-panel">
-        <header class="settings-header">
-          <h2>Settings</h2>
-          <button type="button" class="settings-close" @click="closeSettings">Close</button>
-        </header>
-        <p class="settings-copy">Settings UI is not fully migrated yet.</p>
-        <p class="settings-copy">The button is now wired, and this panel is the placeholder entry for the upcoming modern settings surface.</p>
-      </section>
+      <SettingsPanel @close="closeSettings" />
     </div>
   </div>
 </template>
@@ -131,6 +131,7 @@ const {
   flex: 1;
   min-height: 100vh;
   position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 249, 250, 0.98));
 }
 
 .editor-with-tabs {
@@ -162,44 +163,10 @@ const {
   inset: 0;
   z-index: 40;
   display: flex;
-  justify-content: flex-end;
-  background: rgba(15, 23, 42, 0.28);
-}
-
-.settings-panel {
-  width: min(360px, 92vw);
-  height: 100%;
-  padding: 20px 18px;
-  box-sizing: border-box;
-  background: var(--editorBgColor);
-  border-left: 1px solid var(--editorColor10);
-  box-shadow: -12px 0 32px rgba(15, 23, 42, 0.16);
-}
-
-.settings-header {
-  display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.settings-header h2 {
-  margin: 0;
-  font-size: 18px;
-  color: var(--editorColor80);
-}
-
-.settings-close {
-  border: 1px solid var(--editorColor10);
-  border-radius: 6px;
-  padding: 6px 10px;
-  background: var(--itemBgColor);
-  color: var(--editorColor80);
-}
-
-.settings-copy {
-  margin: 0 0 10px;
-  line-height: 1.6;
-  color: var(--editorColor60);
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(8px);
 }
 </style>

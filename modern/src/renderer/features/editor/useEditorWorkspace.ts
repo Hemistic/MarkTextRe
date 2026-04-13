@@ -12,6 +12,7 @@ export const useEditorWorkspace = () => {
     tabs,
     activeTabId,
     activeDocument,
+    projectTree,
     recentDocuments,
     headings
   } = storeToRefs(editor)
@@ -20,6 +21,7 @@ export const useEditorWorkspace = () => {
     activeTabId,
     bootstrap,
     headings,
+    projectTree,
     recentDocuments,
     tabs,
     viewMode

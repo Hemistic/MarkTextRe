@@ -21,6 +21,12 @@ describe('app commands', () => {
     }))).toEqual({ command: 'new-file' })
 
     expect(mapKeyboardEventToAppCommand(createKeyboardEvent({
+      key: 'O',
+      ctrlKey: true,
+      shiftKey: true
+    }))).toEqual({ command: 'open-folder' })
+
+    expect(mapKeyboardEventToAppCommand(createKeyboardEvent({
       key: 'o',
       metaKey: true
     }))).toEqual({ command: 'open-file' })
@@ -54,18 +60,24 @@ describe('app commands', () => {
       createTab: vi.fn(),
       openDocument: vi.fn(async () => {}),
       openDocumentAtPath: vi.fn(async (_pathname: string) => {}),
+      openFolder: vi.fn(async () => {}),
+      openFolderAtPath: vi.fn(async (_pathname: string) => true),
       saveActiveDocument: vi.fn(async () => {}),
       saveActiveDocumentAs: vi.fn(async () => {})
     }
 
     await executeEditorAppCommand(editor, { command: 'new-file' })
     await executeEditorAppCommand(editor, { command: 'open-file' })
+    await executeEditorAppCommand(editor, { command: 'open-folder' })
+    await executeEditorAppCommand(editor, { command: 'open-folder', pathname: 'D:/docs' })
     await executeEditorAppCommand(editor, { command: 'open-path', pathname: 'D:/docs/example.md' })
     await executeEditorAppCommand(editor, { command: 'save-file' })
     await executeEditorAppCommand(editor, { command: 'save-file-as' })
 
     expect(editor.createTab).toHaveBeenCalledOnce()
     expect(editor.openDocument).toHaveBeenCalledOnce()
+    expect(editor.openFolder).toHaveBeenCalledOnce()
+    expect(editor.openFolderAtPath).toHaveBeenCalledWith('D:/docs')
     expect(editor.openDocumentAtPath).toHaveBeenCalledWith('D:/docs/example.md')
     expect(editor.saveActiveDocument).toHaveBeenCalledOnce()
     expect(editor.saveActiveDocumentAs).toHaveBeenCalledOnce()
@@ -76,12 +88,16 @@ describe('app commands', () => {
       createTab: vi.fn(),
       openDocument: vi.fn(async () => {}),
       openDocumentAtPath: vi.fn(async (_pathname: string) => {}),
+      openFolder: vi.fn(async () => {}),
+      openFolderAtPath: vi.fn(async (_pathname: string) => true),
       saveActiveDocument: vi.fn(async () => {}),
       saveActiveDocumentAs: vi.fn(async () => {})
     }
 
     await executeEditorAppCommand(editor, { command: 'open-path' })
+    await executeEditorAppCommand(editor, { command: 'open-folder' })
 
     expect(editor.openDocumentAtPath).not.toHaveBeenCalled()
+    expect(editor.openFolder).toHaveBeenCalledOnce()
   })
 })

@@ -43,6 +43,13 @@ export default defineConfig({
     electron([
       {
         entry: 'src/main/index.ts',
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ['iconv-lite']
+            }
+          }
+        },
         onstart: async () => {
           await handleElectronStartup(async () => {
             await startModernElectron()

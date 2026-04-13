@@ -5,6 +5,20 @@ export interface MuyaSearchStatus {
   activeIndex: number
 }
 
+export interface MuyaSearchOptions {
+  isCaseSensitive: boolean
+  isWholeWord: boolean
+  isRegexp: boolean
+}
+
+export interface MuyaSearchRequest extends Partial<MuyaSearchOptions> {
+  selectHighlight?: boolean
+}
+
+export interface MuyaReplaceOptions extends Partial<MuyaSearchOptions> {
+  isSingle?: boolean
+}
+
 export const getMuyaSearchStatus = (
   editor: Pick<MuyaEditorInstance, 'contentState'> | null | undefined
 ): MuyaSearchStatus => {
@@ -20,18 +34,36 @@ export const getMuyaSearchStatus = (
   }
 }
 
-const DEFAULT_SEARCH_OPTIONS = {
+const DEFAULT_SEARCH_OPTIONS: MuyaSearchOptions & { selectHighlight: boolean } = {
   isCaseSensitive: false,
   isWholeWord: false,
   isRegexp: false,
-  selectHighlight: true
+  selectHighlight: false
 }
 
 export const searchMuyaDocument = (
   editor: Pick<MuyaEditorInstance, 'search' | 'contentState'> | null | undefined,
-  value: string
+  value: string,
+  options: MuyaSearchRequest = {}
 ) => {
-  editor?.search?.(value, DEFAULT_SEARCH_OPTIONS)
+  editor?.search?.(value, {
+    ...DEFAULT_SEARCH_OPTIONS,
+    ...options
+  })
+  return getMuyaSearchStatus(editor)
+}
+
+export const replaceMuyaSearch = (
+  editor: Pick<MuyaEditorInstance, 'replace' | 'contentState'> | null | undefined,
+  value: string,
+  options: MuyaReplaceOptions = {}
+) => {
+  editor?.replace?.(value, {
+    isSingle: true,
+    ...DEFAULT_SEARCH_OPTIONS,
+    ...options
+  })
+
   return getMuyaSearchStatus(editor)
 }
 

@@ -9,6 +9,7 @@ declare module '*.vue' {
 
 declare global {
   var DIRNAME: string
+  var global: typeof globalThis
 
   interface Window {
     DIRNAME: string

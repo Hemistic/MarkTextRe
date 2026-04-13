@@ -7,6 +7,10 @@ interface HomeViewEditorStore {
   closeTab: (id: string) => void
   createTab: () => void
   openDocument: () => Promise<void>
+  openPath: () => Promise<void>
+  openDocumentAtPath: (pathname: string) => Promise<void>
+  openFolder: () => Promise<void>
+  openFolderAtPath: (pathname: string) => Promise<boolean>
   openSampleDocument: () => void
   reopenRecentDocument: (pathname: string) => Promise<void>
   saveActiveDocument: () => Promise<void>
@@ -24,7 +28,11 @@ export interface HomeViewActions {
   createDocument: () => void
   maximizeWindow: () => Promise<void>
   minimizeWindow: () => Promise<void>
+  openPath: () => Promise<void>
   openDocument: () => Promise<void>
+  openDocumentAtPath: (pathname: string) => Promise<void>
+  openFolder: () => Promise<void>
+  openFolderAtPath: (pathname: string) => Promise<boolean>
   openRecentDocument: (pathname: string) => Promise<void>
   openSettings: () => void
   openSampleDocument: () => void
@@ -44,7 +52,11 @@ export const createHomeViewActions = (
   createDocument: () => editor.createTab(),
   maximizeWindow: () => windowActions.maximizeWindow(),
   minimizeWindow: () => windowActions.minimizeWindow(),
+  openPath: () => editor.openPath(),
   openDocument: () => editor.openDocument(),
+  openDocumentAtPath: pathname => editor.openDocumentAtPath(pathname),
+  openFolder: () => editor.openFolder(),
+  openFolderAtPath: pathname => editor.openFolderAtPath(pathname),
   openRecentDocument: pathname => editor.reopenRecentDocument(pathname),
   openSettings: () => {
     hooks.openSettingsPanel?.()

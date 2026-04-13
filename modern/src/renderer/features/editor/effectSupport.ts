@@ -29,6 +29,18 @@ interface SessionPersistenceTaskInput {
   viewMode: EditorViewMode
 }
 
+interface AutoSaveControllerOptions {
+  clearTimeoutFn?: typeof clearTimeout
+  onError?: (error: unknown) => void
+  setTimeoutFn?: typeof setTimeout
+}
+
+interface AutoSaveSnapshot {
+  autoSave: boolean
+  autoSaveDelay: number
+  tabs: EditorTab[]
+}
+
 export const createDelayedTaskScheduler = ({
   clearTimeoutFn = clearTimeout,
   delayMs = 500,
@@ -61,6 +73,68 @@ export const createDelayedTaskScheduler = ({
   return {
     dispose,
     schedule
+  }
+}
+
+export const createAutoSaveController = (
+  saveDocument: (id: string) => Promise<unknown>,
+  {
+    clearTimeoutFn = clearTimeout,
+    onError = () => {},
+    setTimeoutFn = setTimeout
+  }: AutoSaveControllerOptions = {}
+) => {
+  const timers = new Map<string, ReturnType<typeof setTimeout>>()
+
+  const clearTimer = (id: string) => {
+    const timer = timers.get(id)
+    if (!timer) {
+      return
+    }
+
+    clearTimeoutFn(timer)
+    timers.delete(id)
+  }
+
+  const dispose = () => {
+    for (const id of timers.keys()) {
+      clearTimer(id)
+    }
+  }
+
+  const sync = ({
+    autoSave,
+    autoSaveDelay,
+    tabs
+  }: AutoSaveSnapshot) => {
+    const eligibleTabs = autoSave
+      ? tabs.filter(tab => tab.dirty && Boolean(tab.pathname))
+      : []
+    const eligibleIds = new Set(eligibleTabs.map(tab => tab.id))
+
+    for (const id of Array.from(timers.keys())) {
+      if (!eligibleIds.has(id)) {
+        clearTimer(id)
+      }
+    }
+
+    if (!autoSave) {
+      return
+    }
+
+    for (const tab of eligibleTabs) {
+      clearTimer(tab.id)
+      const timer = setTimeoutFn(() => {
+        timers.delete(tab.id)
+        void saveDocument(tab.id).catch(onError)
+      }, autoSaveDelay)
+      timers.set(tab.id, timer)
+    }
+  }
+
+  return {
+    dispose,
+    sync
   }
 }
 

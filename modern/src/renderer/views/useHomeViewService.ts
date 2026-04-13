@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useEditorWorkspace } from '../features/editor/useEditorWorkspace'
 import type { MuyaEditorExpose, SidebarExpose } from './homeEditorTypes'
 import { useHomeSearch } from './useHomeSearch'
@@ -6,10 +6,14 @@ import { startHomeEditorCommandBindings } from './homeEditorCommandBindings'
 import { createHomeViewActions } from './homeViewActions'
 import { useHomeViewBindings } from './useHomeViewBindings'
 import { createHomeEditorCommandExecutor } from './homeViewRuntimeSupport'
+import { useSettingsStore } from '../stores/settings'
+import { sortProjectTree } from '../features/editor/projectTreeSortSupport'
 
 export const useHomeViewService = () => {
   const workspace = useEditorWorkspace()
   const { editor, viewState } = workspace
+  const settings = useSettingsStore()
+  const showTabBar = computed(() => settings.state?.tabBarVisibility ?? false)
 
   const muyaEditor = ref<MuyaEditorExpose | null>(null)
   const sideBar = ref<SidebarExpose | null>(null)
@@ -43,10 +47,41 @@ export const useHomeViewService = () => {
     search.refreshActiveDocumentSearch
   )
 
+  watch(
+    () => settings.state?.sideBarVisibility ?? false,
+    visible => {
+      if (!visible) {
+        viewState.sideBarMode.value = ''
+        return
+      }
+
+      if (!viewState.sideBarMode.value) {
+        viewState.sideBarMode.value = 'files'
+      }
+    },
+    { immediate: true }
+  )
+
+  watch(
+    [
+      () => settings.state?.fileSortBy ?? 'created',
+      () => viewState.projectTree.value
+    ],
+    ([sortBy, projectTree]) => {
+      if (!projectTree) {
+        return
+      }
+
+      sortProjectTree(projectTree, sortBy)
+    },
+    { immediate: true }
+  )
+
   const bindings = useHomeViewBindings({
     actions,
     muyaEditor,
     search,
+    showTabBar,
     sideBar,
     view: viewState
   })
@@ -56,6 +91,7 @@ export const useHomeViewService = () => {
     closeSettings: () => {
       isSettingsOpen.value = false
     },
-    isSettingsOpen
+    isSettingsOpen,
+    settingsState: computed(() => settings.state)
   }
 }

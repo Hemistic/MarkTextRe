@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Sidebar Placeholder</title>
+  <desc id="desc">Placeholder image for sidebar screenshot.</desc>
+  <rect width="1280" height="720" fill="#0f172a" />
+  <rect x="48" y="48" width="1184" height="624" rx="24" fill="#111827" stroke="#334155" />
+  <rect x="48" y="48" width="280" height="624" rx="24" fill="#1e293b" />
+  <rect x="360" y="96" width="820" height="528" rx="20" fill="#f8fafc" />
+  <text x="188" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="30" fill="#e2e8f0">Sidebar</text>
+  <text x="770" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#334155">Workspace Placeholder</text>
+  <text x="640" y="650" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#cbd5e1">Replace image/sidebar-placeholder.svg later</text>
+</svg>

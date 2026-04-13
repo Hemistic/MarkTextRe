@@ -5,4 +5,6 @@ export const recentDocumentsPath = () => path.join(app.getPath('userData'), 'rec
 
 export const sessionStatePath = () => path.join(app.getPath('userData'), 'session-state.json')
 
+export const settingsStatePath = () => path.join(app.getPath('userData'), 'settings.json')
+
 export const windowStatePath = () => path.join(app.getPath('userData'), 'window-state.json')

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
-import type { AppBootstrap, EditorViewMode, RecentDocument } from '@shared/contracts'
+import type { AppBootstrap, EditorViewMode, ProjectTreeNode, RecentDocument } from '@shared/contracts'
 import type { EditorCommandState } from './commands'
 import type { EditorTab, HeadingItem } from './types'
 import { DEFAULT_STATUS } from './document'
@@ -21,6 +21,7 @@ export interface EditorRuntimeState {
   activeTabId: Ref<string | null>
   untitledSequence: Ref<number>
   recentDocuments: Ref<RecentDocument[]>
+  projectTree: Ref<ProjectTreeNode | null>
   status: Ref<string>
   bootstrapLoaded: Ref<boolean>
   activeDocument: ComputedRef<EditorTab | null>
@@ -42,6 +43,7 @@ export const createEditorRuntimeState = (
   const activeTabId = ref<string | null>(null)
   const untitledSequence = ref(1)
   const recentDocuments = ref<RecentDocument[]>([])
+  const projectTree = ref<ProjectTreeNode | null>(null)
   const status = ref(DEFAULT_STATUS)
   const bootstrapLoaded = ref(false)
 
@@ -66,6 +68,7 @@ export const createEditorRuntimeState = (
     activeTabId,
     untitledSequence,
     recentDocuments,
+    projectTree,
     status,
     bootstrapLoaded,
     activeDocument,

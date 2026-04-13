@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { EditorTab } from './types'
 import {
+  createAutoSaveController,
   createDelayedTaskScheduler,
   createEditorSessionPersistenceTask,
   createWindowCloseCoordinator
@@ -111,6 +112,34 @@ describe('effect support', () => {
         toc: [{ content: 'Example', lvl: 1, slug: 'example' }]
       }]
     })
+  })
+
+  it('auto-saves dirty file tabs and clears timers for ineligible tabs', async () => {
+    vi.useFakeTimers()
+    const saveDocument = vi.fn(async () => {})
+    const controller = createAutoSaveController(saveDocument)
+
+    controller.sync({
+      autoSave: true,
+      autoSaveDelay: 1200,
+      tabs: [
+        createTab({ id: 'file', dirty: true, pathname: 'D:/docs/example.md' }),
+        createTab({ id: 'untitled', dirty: true, pathname: null, filename: 'untitled-1.md' })
+      ]
+    })
+
+    await vi.advanceTimersByTimeAsync(1199)
+    expect(saveDocument).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(1)
+    expect(saveDocument).toHaveBeenCalledWith('file')
+
+    controller.sync({
+      autoSave: false,
+      autoSaveDelay: 1200,
+      tabs: [createTab({ id: 'file', dirty: true })]
+    })
+    controller.dispose()
   })
 
   it('builds a window close coordinator against the current tab getter', async () => {

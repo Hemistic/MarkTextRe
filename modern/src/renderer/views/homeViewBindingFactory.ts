@@ -18,7 +18,8 @@ export const createEditorBindings = ({
     documentId: view.activeDocument.value?.id ?? '',
     history: view.activeDocument.value?.history,
     modelValue: view.activeDocument.value?.markdown ?? '',
-    pathname: view.activeDocument.value?.pathname ?? null
+    pathname: view.activeDocument.value?.pathname ?? null,
+    workspaceRootPath: view.projectTree.value?.pathname ?? null
   }))
 
   const handlers = {
@@ -41,28 +42,43 @@ export const createSidebarBindings = ({
   view: EditorWorkspaceViewState
 }) => {
   const props = computed(() => ({
+    activePathname: view.activeDocument.value?.pathname ?? null,
     activeTabId: view.activeTabId.value,
     mode: view.sideBarMode.value,
+    openPathnames: view.tabs.value
+      .map(tab => tab.pathname)
+      .filter((pathname): pathname is string => Boolean(pathname)),
+    projectTree: view.projectTree.value,
     recentDocuments: view.recentDocuments.value,
     searchActiveIndex: search.searchActiveIndex.value,
+    searchError: search.searchError.value,
+    searchOptions: search.searchOptions.value,
     searchQuery: search.searchQuery.value,
     searchTotal: search.searchTotal.value,
+    replaceQuery: search.replaceQuery.value,
     tabs: view.tabs.value,
     tocItems: view.activeDocument.value?.toc ?? []
   }))
 
   const handlers = {
+    closeTab: actions.closeTab,
     newFile: actions.createDocument,
     openFile: actions.openDocument,
+    openFolder: actions.openFolder,
+    openPath: actions.openDocumentAtPath,
     openRecent: actions.openRecentDocument,
     openSettings: actions.openSettings,
+    replaceAll: search.replaceAll,
+    replaceCurrent: search.replaceCurrent,
     searchNext: () => search.stepSearch('next'),
     searchPrev: () => search.stepSearch('prev'),
     selectHeading: search.handleHeadingSelect,
     selectTab: actions.selectTab,
+    toggleSearchOption: search.toggleSearchOption,
     updateMode: (value: SideBarMode) => {
       view.sideBarMode.value = value
     },
+    updateReplaceQuery: search.updateReplace,
     updateSearchQuery: search.updateSearch
   }
 
@@ -98,9 +114,11 @@ export const createTabsBindings = ({
 
 export const createTitleBarBindings = ({
   actions,
+  showTabBar,
   view
 }: {
   actions: HomeViewActions
+  showTabBar: Ref<boolean>
   view: EditorWorkspaceViewState
 }) => {
   const props = computed(() => ({
@@ -109,7 +127,8 @@ export const createTitleBarBindings = ({
     filename: view.titleFilename.value,
     hasDocument: Boolean(view.activeDocument.value),
     pathname: view.titlePathname.value,
-    showTabBar: true,
+    showPathSegments: view.sideBarMode.value === '',
+    showTabBar: showTabBar.value,
     wordCount: view.titleWordCount.value
   }))
 
@@ -118,7 +137,8 @@ export const createTitleBarBindings = ({
     maximizeWindow: actions.maximizeWindow,
     minimizeWindow: actions.minimizeWindow,
     newFile: actions.createDocument,
-    openFile: actions.openDocument,
+    openFile: actions.openPath,
+    openFolder: actions.openFolder,
     saveFile: actions.saveDocument,
     saveFileAs: actions.saveDocumentAs,
     toggleDevTools: actions.toggleDevToolsWindow
@@ -155,13 +175,15 @@ export const createRecentBindings = ({
 }
 
 export const createHomeFlags = ({
+  showTabBar,
   view
 }: {
+  showTabBar: Ref<boolean>
   view: EditorWorkspaceViewState
 }) => {
   return computed(() => ({
     hasActiveDocument: Boolean(view.activeDocument.value),
-    hasTabs: view.tabs.value.length > 0,
+    hasTabs: showTabBar.value && view.tabs.value.length > 0,
     showHome: view.showHome.value
   }))
 }

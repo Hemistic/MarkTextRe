@@ -18,6 +18,11 @@ export const APP_COMMAND_CONFIG: Record<AppCommand, AppCommandConfig> = {
     label: 'Open...',
     accelerator: 'CmdOrCtrl+O'
   },
+  'open-folder': {
+    command: 'open-folder',
+    label: 'Open Folder...',
+    accelerator: 'Shift+CmdOrCtrl+O'
+  },
   'open-path': {
     command: 'open-path',
     label: 'Open Path',
@@ -56,6 +61,7 @@ export const getAppCommandConfig = (command: AppCommand) => APP_COMMAND_CONFIG[c
 export const getPrimaryMenuCommands = () => ([
   APP_COMMAND_CONFIG['new-file'],
   APP_COMMAND_CONFIG['open-file'],
+  APP_COMMAND_CONFIG['open-folder'],
   APP_COMMAND_CONFIG['save-file'],
   APP_COMMAND_CONFIG['save-file-as']
 ])

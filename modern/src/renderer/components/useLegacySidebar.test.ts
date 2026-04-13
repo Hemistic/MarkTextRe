@@ -13,14 +13,25 @@ describe('useLegacySidebar', () => {
       ]),
       {
         searchQuery: ref('term'),
+        replaceQuery: ref('replacement'),
         searchTotal: ref(4),
-        searchActiveIndex: ref(1)
+        searchActiveIndex: ref(1),
+        searchError: ref(''),
+        searchOptions: ref({
+          isCaseSensitive: false,
+          isWholeWord: false,
+          isRegexp: false
+        })
       },
       {
         updateMode: vi.fn(),
         updateSearchQuery: vi.fn(),
+        updateReplaceQuery: vi.fn(),
+        toggleSearchOption: vi.fn(),
         searchNext: vi.fn(),
-        searchPrev: vi.fn()
+        searchPrev: vi.fn(),
+        replaceCurrent: vi.fn(),
+        replaceAll: vi.fn()
       }
     )
 
@@ -53,14 +64,25 @@ describe('useLegacySidebar', () => {
       computed(() => []),
       {
         searchQuery: ref(''),
+        replaceQuery: ref(''),
         searchTotal: ref(0),
-        searchActiveIndex: ref(-1)
+        searchActiveIndex: ref(-1),
+        searchError: ref(''),
+        searchOptions: ref({
+          isCaseSensitive: false,
+          isWholeWord: false,
+          isRegexp: false
+        })
       },
       {
         updateMode,
         updateSearchQuery: vi.fn(),
+        updateReplaceQuery: vi.fn(),
+        toggleSearchOption: vi.fn(),
         searchNext,
-        searchPrev
+        searchPrev,
+        replaceCurrent: vi.fn(),
+        replaceAll: vi.fn()
       }
     )
 

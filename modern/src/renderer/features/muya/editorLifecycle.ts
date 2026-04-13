@@ -5,10 +5,16 @@ import type { CreateMuyaEditorOptions, MuyaEditorConstructor, MuyaEditorInstance
 export const createMuyaEditorInstance = (
   Muya: MuyaEditorConstructor,
   host: HTMLElement,
-  markdown: string
+  markdown: string,
+  settings?: CreateMuyaEditorOptions['settings'],
+  pathname?: string | null,
+  workspaceRootPath?: string | null
 ) => {
   return ensureMuyaPluginSlots(new Muya(host, {
-    ...createDefaultMuyaEditorOptions(),
+    ...createDefaultMuyaEditorOptions(settings, {
+      documentPathname: pathname,
+      workspaceRootPath
+    }),
     markdown
   }))
 }

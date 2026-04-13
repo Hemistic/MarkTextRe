@@ -35,6 +35,10 @@ describe('setupEditorEffects', () => {
     vi.useFakeTimers()
 
     const bootstrapLoaded = ref(true)
+    const autoSaveSettings = computed(() => ({
+      autoSave: false,
+      autoSaveDelay: 5000
+    }))
     const viewMode = ref<'home' | 'editor'>('editor')
     const tabs = ref<EditorTab[]>([createTab()])
     const activeTabId = ref<string | null>('tab-1')
@@ -50,12 +54,14 @@ describe('setupEditorEffects', () => {
     ;(globalThis as { window?: unknown }).window = {}
 
     const dispose = setupEditorEffects({
+      autoSaveSettings,
       bootstrapLoaded,
       viewMode,
       tabs,
       activeTabId,
       untitledSequence,
       hasDirtyDocuments,
+      saveDocument: vi.fn(async () => null),
       saveAllDirtyDocuments: vi.fn(async () => true)
     }, runtimeServices)
 

@@ -1,5 +1,6 @@
 import path from 'node:path'
 import type { BrowserWindowConstructorOptions } from 'electron'
+import type { TitleBarStyle } from '@shared/contracts'
 
 export const resolvePreloadPath = (options: {
   isDev: boolean
@@ -16,15 +17,18 @@ export const createMainWindowOptions = (options: {
   isDev: boolean
   platform: NodeJS.Platform
   preloadPath: string
+  titleBarStyle: TitleBarStyle
 }): BrowserWindowConstructorOptions => {
-  const { initialBounds, platform, preloadPath } = options
+  const { initialBounds, platform, preloadPath, titleBarStyle } = options
+
+  const shouldUseCustomFrame = platform !== 'darwin' && titleBarStyle !== 'native'
 
   return {
     ...initialBounds,
     minWidth: 1024,
     minHeight: 640,
     backgroundColor: '#f4f1e8',
-    frame: platform === 'darwin',
+    frame: platform === 'darwin' ? true : !shouldUseCustomFrame,
     titleBarStyle: platform === 'darwin' ? 'hiddenInset' : 'default',
     show: false,
     webPreferences: {

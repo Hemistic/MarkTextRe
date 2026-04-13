@@ -93,4 +93,32 @@ describe('bootstrap', () => {
     expect(state.status.value).toBe('Restored 1 document(s)')
     expect(runtimeServices.syncDirtyState).toHaveBeenCalledWith(true)
   })
+
+  it('honors blank startup by opening a fresh untitled document', async () => {
+    const runtimeServices = {
+      loadBootstrapState: vi.fn(async (): Promise<BootstrapState> => ({
+        bootstrap,
+        recentDocuments,
+        sessionState: null
+      })),
+      syncDirtyState: vi.fn(async () => {})
+    }
+    const state = createState()
+
+    const result = await loadEditorBootstrapIntoState(
+      state,
+      computed(() => false),
+      runtimeServices,
+      {
+        defaultDirectoryToOpen: '',
+        startUpAction: 'blank'
+      }
+    )
+
+    expect(result).toBe(true)
+    expect(state.viewMode.value).toBe('editor')
+    expect(state.tabs.value).toHaveLength(1)
+    expect(state.tabs.value[0]?.kind).toBe('untitled')
+    expect(state.status.value).toMatch(/^Opened untitled-1\.md$/)
+  })
 })

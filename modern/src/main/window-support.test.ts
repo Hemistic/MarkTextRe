@@ -24,7 +24,8 @@ describe('window support', () => {
       initialBounds: { width: 1200, height: 800, x: 10, y: 20 },
       isDev: true,
       platform: 'darwin',
-      preloadPath: '/app/preload.cjs'
+      preloadPath: '/app/preload.cjs',
+      titleBarStyle: 'custom'
     })).toMatchObject({
       width: 1200,
       height: 800,
@@ -62,5 +63,17 @@ describe('window support', () => {
       kind: 'file',
       target: path.join('/app/dist-electron', '../dist/index.html')
     })
+  })
+
+  it('uses a frameless window for custom title bars on non-macOS', () => {
+    const options = createMainWindowOptions({
+      initialBounds: { width: 1200, height: 800, x: 10, y: 20 },
+      isDev: false,
+      platform: 'win32',
+      preloadPath: '/app/preload.cjs',
+      titleBarStyle: 'custom'
+    })
+
+    expect(options.frame).toBe(false)
   })
 })

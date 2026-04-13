@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import { describe, expect, it } from 'vitest'
 import type { EditorTab } from './types'
 import {
@@ -79,6 +80,22 @@ describe('serialization', () => {
       lvl: 1,
       meta: null
     }])
+  })
+
+  it('converts reactive encoding metadata into a clone-safe plain object', () => {
+    const [serializedTab] = serializeSessionState('editor', 'tab-1', 2, [
+      createTab({
+        encoding: reactive({
+          encoding: 'utf16le',
+          isBom: true
+        })
+      })
+    ]).tabs
+
+    expect(serializedTab?.encoding).toEqual({
+      encoding: 'utf16le',
+      isBom: true
+    })
   })
 
   it('restores headings from toc when toc data is present', () => {

@@ -2,12 +2,14 @@
 import { ref } from 'vue'
 import 'legacy-muya/themes/default.css'
 import 'legacy-muya/themes/prismjs/light.theme.css'
+import type { SettingsState } from '@shared/contracts'
 import '../styles/muya-code-theme.css'
 import type { EditorChangePayload } from '../features/editor/types'
+import { scrollMuyaToHeadingWithinRoots } from '../features/muya/navigation'
 import {
-  scrollMuyaToHeadingWithinRoots
-} from '../features/muya/navigation'
-import {
+  type MuyaReplaceOptions,
+  type MuyaSearchRequest,
+  replaceMuyaSearch,
   searchMuyaDocument,
   stepMuyaSearch
 } from '../features/muya/search'
@@ -17,8 +19,10 @@ const props = defineProps<{
   documentId: string
   modelValue: string
   pathname?: string | null
+  workspaceRootPath?: string | null
   cursor?: unknown
   history?: unknown
+  settings?: SettingsState | null
 }>()
 
 const emit = defineEmits<{
@@ -32,12 +36,42 @@ const { loadError, editorRef } = useMuyaEditor(host, props, {
   editorChange: payload => emit('editor-change', payload)
 })
 
-const search = (value: string) => {
-  return searchMuyaDocument(editorRef(), value)
+const scrollActiveSearchIntoView = () => {
+  requestAnimationFrame(() => {
+    const container = editorRef()?.container ?? null
+    const activeHighlight = container?.querySelector?.('.ag-highlight')
+
+    if (activeHighlight instanceof HTMLElement) {
+      activeHighlight.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest'
+      })
+    }
+  })
+}
+
+const search = (value: string, options?: MuyaSearchRequest) => {
+  const result = searchMuyaDocument(editorRef(), value, options)
+  if (options?.selectHighlight && result.total > 0) {
+    scrollActiveSearchIntoView()
+  }
+  return result
+}
+
+const replace = (value: string, options?: MuyaReplaceOptions) => {
+  const result = replaceMuyaSearch(editorRef(), value, options)
+  if (result.total > 0) {
+    scrollActiveSearchIntoView()
+  }
+  return result
 }
 
 const find = (direction: 'prev' | 'next') => {
-  return stepMuyaSearch(editorRef(), direction)
+  const result = stepMuyaSearch(editorRef(), direction)
+  if (result.total > 0) {
+    scrollActiveSearchIntoView()
+  }
+  return result
 }
 
 const undo = () => {
@@ -56,6 +90,7 @@ const scrollToHeading = (slug: string) => {
 
 defineExpose({
   search,
+  replace,
   find,
   undo,
   redo,

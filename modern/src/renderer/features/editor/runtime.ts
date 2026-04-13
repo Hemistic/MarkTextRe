@@ -1,8 +1,11 @@
+import { computed } from 'vue'
+import { useSettingsStore } from '../../stores/settings'
 import { createEditorActions } from './actions'
 import { setupEditorEffects } from './effects'
 import { createEditorRuntimeState } from './runtimeState'
 
 export const createEditorStoreRuntime = () => {
+  const settings = useSettingsStore()
   const state = createEditorRuntimeState()
   const {
     bootstrap,
@@ -11,6 +14,7 @@ export const createEditorStoreRuntime = () => {
     activeTabId,
     untitledSequence,
     recentDocuments,
+    projectTree,
     status,
     bootstrapLoaded,
     activeDocument,
@@ -23,12 +27,17 @@ export const createEditorStoreRuntime = () => {
   const actions = createEditorActions(state)
 
   setupEditorEffects({
+    autoSaveSettings: computed(() => ({
+      autoSave: settings.state?.autoSave ?? false,
+      autoSaveDelay: settings.state?.autoSaveDelay ?? 5000
+    })),
     bootstrapLoaded,
     viewMode,
     tabs,
     activeTabId,
     untitledSequence,
     hasDirtyDocuments,
+    saveDocument: id => actions.saveDocument(id, false),
     saveAllDirtyDocuments: actions.saveAllDirtyDocuments
   })
 
@@ -41,6 +50,7 @@ export const createEditorStoreRuntime = () => {
     hasOpenDocument,
     hasDirtyDocuments,
     recentDocuments,
+    projectTree,
     status,
     headings,
     wordCount,

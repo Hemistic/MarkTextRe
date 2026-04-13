@@ -53,13 +53,18 @@ export const syncMuyaEditorState = (
 export const createMuyaEditor = async ({
   host,
   markdown,
+  pathname,
+  workspaceRootPath,
   cursor,
   history,
+  settings,
   onChange
 }: CreateMuyaEditorOptions) => {
   const Muya = await loadMuyaEditorConstructor()
   registerMuyaPlugins(Muya)
-  const editor = await waitForMuyaEditorReady(createMuyaEditorInstance(Muya, host, markdown))
+  const editor = await waitForMuyaEditorReady(
+    createMuyaEditorInstance(Muya, host, markdown, settings, pathname, workspaceRootPath)
+  )
 
   syncMuyaEditorState(editor, markdown, cursor, history)
   bindMuyaEditorChange(editor, onChange)

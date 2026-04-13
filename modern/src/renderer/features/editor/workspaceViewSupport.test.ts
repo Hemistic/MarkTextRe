@@ -31,12 +31,15 @@ describe('workspaceViewSupport', () => {
       activeTabId: ref('tab-1'),
       bootstrap: ref(null),
       headings: computed(() => []),
+      projectTree: ref(null),
       recentDocuments: ref([]),
+      showTabBar: ref(false),
       tabs: ref([]),
       viewMode: ref('editor')
     })
 
     expect(viewState.sideBarMode.value).toBe('files')
+    expect(viewState.showTabBar.value).toBe(false)
     expect(viewState.titleFilename.value).toBe('example.md')
     expect(viewState.titlePathname.value).toBe('D:/docs/example.md')
     expect(viewState.titleDirty.value).toBe(true)
@@ -55,7 +58,9 @@ describe('workspaceViewSupport', () => {
       activeTabId: ref(null),
       bootstrap: ref(null),
       headings: computed(() => []),
+      projectTree: ref(null),
       recentDocuments: ref([]),
+      showTabBar: ref(false),
       tabs: ref([]),
       viewMode: ref('home')
     })

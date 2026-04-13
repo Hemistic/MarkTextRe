@@ -17,11 +17,27 @@ export const DEFAULT_STATUS = 'Open a Markdown file or create a new one.'
 export const UNTITLED_TEMPLATE = '# Untitled\n\n'
 export { summarizeMarkdown } from './document-summary-support'
 
+const DEFAULT_FILE_OPTIONS = {
+  encoding: {
+    encoding: 'utf8',
+    isBom: false
+  },
+  lineEnding: 'lf' as const,
+  adjustLineEndingOnSave: false,
+  trimTrailingNewline: 2 as const,
+  isMixedLineEndings: false
+}
+
 export const createEditorTab = (document: EditorDocument, kind: EditorTab['kind']): EditorTab => {
   const summary = summarizeMarkdown(document.markdown)
 
   return {
     ...document,
+    encoding: document.encoding ?? DEFAULT_FILE_OPTIONS.encoding,
+    lineEnding: document.lineEnding ?? DEFAULT_FILE_OPTIONS.lineEnding,
+    adjustLineEndingOnSave: document.adjustLineEndingOnSave ?? DEFAULT_FILE_OPTIONS.adjustLineEndingOnSave,
+    trimTrailingNewline: document.trimTrailingNewline ?? DEFAULT_FILE_OPTIONS.trimTrailingNewline,
+    isMixedLineEndings: document.isMixedLineEndings ?? DEFAULT_FILE_OPTIONS.isMixedLineEndings,
     kind,
     savedMarkdown: document.markdown,
     headings: summary.headings,
@@ -39,7 +55,8 @@ export const createUntitledDocument = (sequence: number): EditorTab => {
     pathname: null,
     filename: `untitled-${sequence}.md`,
     markdown: UNTITLED_TEMPLATE,
-    dirty: false
+    dirty: false,
+    ...DEFAULT_FILE_OPTIONS
   }, 'untitled')
 }
 
@@ -49,7 +66,8 @@ export const createDefaultSampleDocument = (): EditorTab => {
     pathname: null,
     filename: 'example.md',
     markdown: defaultSampleMarkdown,
-    dirty: false
+    dirty: false,
+    ...DEFAULT_FILE_OPTIONS
   }, 'sample')
 }
 

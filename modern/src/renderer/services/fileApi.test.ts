@@ -29,9 +29,17 @@ describe('fileApi helper', () => {
   const stubFiles: MarkTextFilesApi = {
     getRecentDocuments: async () => [],
     removeRecentDocument: async () => undefined,
+    pickOpenPaths: async () => [],
     openMarkdown: async () => null,
+    openMarkdownInNewWindow: async () => false,
     openMarkdownAtPath: async () => null,
+    openMarkdownAtPathInNewWindow: async () => false,
+    openFolder: async () => null,
+    openFolderAtPath: async () => null,
+    openFolderInNewWindow: async () => false,
+    openFolderAtPathInNewWindow: async () => false,
     pickImage: async () => null,
+    processLocalImage: async () => null,
     saveMarkdown: async () => null,
     saveMarkdownAs: async () => null
   }
@@ -39,6 +47,7 @@ describe('fileApi helper', () => {
   const stubApi: MarkTextApi = {
     app: {} as MarkTextApi['app'],
     files: stubFiles,
+    settings: {} as MarkTextApi['settings'],
     window: {} as MarkTextApi['window']
   }
 

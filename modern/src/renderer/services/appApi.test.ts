@@ -39,6 +39,7 @@ describe('appApi helper', () => {
   const stubApi: MarkTextApi = {
     app: stubApp,
     files: {} as MarkTextApi['files'],
+    settings: {} as MarkTextApi['settings'],
     window: {} as MarkTextApi['window']
   }
 

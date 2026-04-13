@@ -14,6 +14,7 @@ export const createFileSubmenu = (
   return [
     createAppCommandMenuItem('new-file', dispatchAppCommand),
     createAppCommandMenuItem('open-file', dispatchAppCommand),
+    createAppCommandMenuItem('open-folder', dispatchAppCommand),
     {
       label: 'Open Recent',
       submenu: recentFilesSubmenu

@@ -1,5 +1,8 @@
+import type { MuyaReplaceOptions, MuyaSearchRequest } from '../features/muya/search'
+
 export interface MuyaEditorExpose {
-  search: (value: string) => { total: number, activeIndex: number }
+  search: (value: string, options?: MuyaSearchRequest) => { total: number, activeIndex: number }
+  replace: (value: string, options?: MuyaReplaceOptions) => { total: number, activeIndex: number }
   find: (direction: 'prev' | 'next') => { total: number, activeIndex: number }
   undo: () => void
   redo: () => void

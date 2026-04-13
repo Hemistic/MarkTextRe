@@ -47,7 +47,7 @@ describe('muya search helpers', () => {
       isCaseSensitive: false,
       isWholeWord: false,
       isRegexp: false,
-      selectHighlight: true
+      selectHighlight: false
     })
   })
 

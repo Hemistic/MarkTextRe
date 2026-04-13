@@ -5,7 +5,7 @@ const { exposeMarkTextApi } = require('./preload-support.cjs')
 
 describe('preload-support', () => {
   it('creates and exposes the marktext api in the main world', () => {
-    const api = { app: {}, files: {}, window: {} }
+    const api = { app: {}, files: {}, settings: {}, window: {} }
     const contextBridge = {
       exposeInMainWorld: vi.fn()
     }

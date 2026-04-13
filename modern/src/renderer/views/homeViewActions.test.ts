@@ -7,6 +7,10 @@ describe('home view actions', () => {
       closeTab: vi.fn(),
       createTab: vi.fn(),
       openDocument: vi.fn(async () => {}),
+      openPath: vi.fn(async () => {}),
+      openDocumentAtPath: vi.fn(async (_pathname: string) => {}),
+      openFolder: vi.fn(async () => {}),
+      openFolderAtPath: vi.fn(async (_pathname: string) => true),
       openSampleDocument: vi.fn(),
       reopenRecentDocument: vi.fn(async (_pathname: string) => {}),
       saveActiveDocument: vi.fn(async () => {}),
@@ -25,7 +29,11 @@ describe('home view actions', () => {
     actions.selectTab('tab-1')
     actions.closeTab('tab-2')
     actions.createDocument()
+    await actions.openPath()
     await actions.openDocument()
+    await actions.openDocumentAtPath('D:/docs/from-tree.md')
+    await actions.openFolder()
+    await actions.openFolderAtPath('D:/docs')
     await actions.openRecentDocument('D:/docs/example.md')
     actions.openSampleDocument()
     await actions.saveDocument()
@@ -38,7 +46,11 @@ describe('home view actions', () => {
     expect(editor.setActiveTab).toHaveBeenCalledWith('tab-1')
     expect(editor.closeTab).toHaveBeenCalledWith('tab-2')
     expect(editor.createTab).toHaveBeenCalledOnce()
+    expect(editor.openPath).toHaveBeenCalledOnce()
     expect(editor.openDocument).toHaveBeenCalledOnce()
+    expect(editor.openDocumentAtPath).toHaveBeenCalledWith('D:/docs/from-tree.md')
+    expect(editor.openFolder).toHaveBeenCalledOnce()
+    expect(editor.openFolderAtPath).toHaveBeenCalledWith('D:/docs')
     expect(editor.reopenRecentDocument).toHaveBeenCalledWith('D:/docs/example.md')
     expect(editor.openSampleDocument).toHaveBeenCalledOnce()
     expect(editor.saveActiveDocument).toHaveBeenCalledOnce()

@@ -31,7 +31,12 @@ export const restoreSessionTab = (tab: EditorSessionTab): EditorTab => {
     wordCount: summary.wordCount,
     cursor: tab.cursor ?? null,
     history: tab.history ?? null,
-    toc: Array.isArray(tab.toc) ? tab.toc : []
+    toc: Array.isArray(tab.toc) ? tab.toc : [],
+    encoding: tab.encoding ?? { encoding: 'utf8', isBom: false },
+    lineEnding: tab.lineEnding ?? 'lf',
+    adjustLineEndingOnSave: tab.adjustLineEndingOnSave ?? false,
+    trimTrailingNewline: tab.trimTrailingNewline ?? 2,
+    isMixedLineEndings: tab.isMixedLineEndings ?? false
   }
 }
 

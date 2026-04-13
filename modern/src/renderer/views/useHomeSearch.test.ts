@@ -5,6 +5,7 @@ import type { MuyaEditorExpose, SidebarExpose } from './homeEditorTypes'
 
 const createMuyaEditor = (): MuyaEditorExpose => ({
   search: vi.fn(() => ({ total: 3, activeIndex: 1 })),
+  replace: vi.fn(() => ({ total: 2, activeIndex: 0 })),
   find: vi.fn(() => ({ total: 3, activeIndex: 2 })),
   undo: vi.fn(),
   redo: vi.fn(),
@@ -53,8 +54,54 @@ describe('useHomeSearch', () => {
     expect(search.searchActiveIndex.value).toBe(1)
 
     search.stepSearch('next')
+    expect(muyaEditor.value?.search).toHaveBeenNthCalledWith(2, 'marktext', {
+      isCaseSensitive: false,
+      isWholeWord: false,
+      isRegexp: false,
+      selectHighlight: true
+    })
     expect(muyaEditor.value?.find).toHaveBeenCalledWith('next')
     expect(search.searchActiveIndex.value).toBe(2)
+    expect(muyaEditor.value?.search).toHaveBeenNthCalledWith(1, 'marktext', {
+      isCaseSensitive: false,
+      isWholeWord: false,
+      isRegexp: false,
+      selectHighlight: false
+    })
+  })
+
+  it('replaces the current match and all matches without leaving search mode', async () => {
+    const muyaEditor = ref<MuyaEditorExpose | null>(createMuyaEditor())
+    const sideBar = ref<SidebarExpose | null>(createSidebar())
+    const sideBarMode = ref<'files' | 'search' | 'toc' | ''>('search')
+
+    const search = useHomeSearch({
+      applyEditorChange: vi.fn(),
+      muyaEditor,
+      sideBar,
+      sideBarMode
+    })
+
+    search.updateSearch('marktext')
+    search.updateReplace('hello')
+    search.replaceCurrent()
+    await nextTick()
+    search.replaceAll()
+    await nextTick()
+
+    expect(muyaEditor.value?.replace).toHaveBeenNthCalledWith(1, 'hello', {
+      isCaseSensitive: false,
+      isWholeWord: false,
+      isRegexp: false,
+      isSingle: true
+    })
+    expect(muyaEditor.value?.replace).toHaveBeenNthCalledWith(2, 'hello', {
+      isCaseSensitive: false,
+      isWholeWord: false,
+      isRegexp: false,
+      isSingle: false
+    })
+    expect(sideBar.value?.focusSearchInput).toHaveBeenCalledTimes(2)
   })
 
   it('re-runs search after editor changes and active document refresh', async () => {

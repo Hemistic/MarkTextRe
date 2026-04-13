@@ -16,6 +16,7 @@ describe('app-command-config', () => {
     expect(getPrimaryMenuCommands().map(item => item.command)).toEqual([
       'new-file',
       'open-file',
+      'open-folder',
       'save-file',
       'save-file-as'
     ])
@@ -25,6 +26,7 @@ describe('app-command-config', () => {
     expect(Object.keys(APP_COMMAND_CONFIG).sort()).toEqual([
       'new-file',
       'open-file',
+      'open-folder',
       'open-path',
       'redo',
       'save-file',

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, toRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, toRef } from 'vue'
 import type { AppBootstrap } from '@shared/contracts'
 import type { DocumentWordCount } from '../features/editor/types'
 import { TITLE_BAR_LABEL_MAP, useLegacyTitleBar } from './useLegacyTitleBar'
+import { useI18n, translateMetricShort } from '../i18n'
 
 const props = defineProps<{
   bootstrap: AppBootstrap | null
@@ -11,12 +12,14 @@ const props = defineProps<{
   dirty: boolean
   wordCount: DocumentWordCount
   hasDocument?: boolean
+  showPathSegments?: boolean
   showTabBar?: boolean
 }>()
 
 const emit = defineEmits<{
   'new-file': []
   'open-file': []
+  'open-folder': []
   'save-file': []
   'save-file-as': []
   'toggle-devtools': []
@@ -29,6 +32,38 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
   toRef(props, 'pathname'),
   computed(() => props.bootstrap?.platform)
 )
+const { locale, t } = useI18n()
+const isOpenMenuVisible = ref(false)
+
+const closeOpenMenu = () => {
+  isOpenMenuVisible.value = false
+}
+
+const toggleOpenMenu = () => {
+  isOpenMenuVisible.value = !isOpenMenuVisible.value
+}
+
+const handleOpenFile = () => {
+  closeOpenMenu()
+  emit('open-file')
+}
+
+const handleOpenFolder = () => {
+  closeOpenMenu()
+  emit('open-folder')
+}
+
+const handleWindowPointerDown = () => {
+  closeOpenMenu()
+}
+
+onMounted(() => {
+  window.addEventListener('pointerdown', handleWindowPointerDown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointerdown', handleWindowPointerDown)
+})
 </script>
 
 <template>
@@ -38,7 +73,10 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
       <div class="title">
         <span v-if="!filename">MarkText</span>
         <span v-else>
-          <span v-for="(segment, index) in pathSegments" :key="`${segment}:${index}`">
+          <span
+            v-for="(segment, index) in showPathSegments ? pathSegments : []"
+            :key="`${segment}:${index}`"
+          >
             {{ segment }}
             <span class="separator">›</span>
           </span>
@@ -48,20 +86,35 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
       </div>
 
       <div class="right-toolbar title-no-drag">
-        <button class="toolbar-button" type="button" @click="emit('new-file')">New</button>
-        <button class="toolbar-button" type="button" @click="emit('open-file')">Open</button>
-        <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file')">Save</button>
-        <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file-as')">Save As</button>
-        <button class="toolbar-button" type="button" @click="emit('toggle-devtools')">DevTools</button>
+        <button class="toolbar-button" type="button" @click="emit('new-file')">{{ t('New') }}</button>
+        <div class="toolbar-menu" @pointerdown.stop>
+          <button class="toolbar-button open-button" type="button" @click="toggleOpenMenu">
+            {{ t('Open') }}
+            <span class="open-caret">▾</span>
+          </button>
+          <div v-if="isOpenMenuVisible" class="open-menu">
+            <button class="open-menu-item" type="button" @click="handleOpenFile">{{ t('File') }}</button>
+            <button class="open-menu-item" type="button" @click="handleOpenFolder">{{ t('Folder') }}</button>
+          </div>
+        </div>
+        <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file')">{{ t('Save') }}</button>
+        <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file-as')">{{ t('Save As') }}</button>
+        <button class="toolbar-button" type="button" @click="emit('toggle-devtools')">{{ t('DevTools') }}</button>
         <button v-if="hasDocument" class="word-count" type="button" @click="cycleMetric">
-          {{ `${TITLE_BAR_LABEL_MAP[currentMetric].short} ${wordCount[currentMetric]}` }}
+          {{ `${translateMetricShort(locale, currentMetric) ?? TITLE_BAR_LABEL_MAP[currentMetric].short} ${wordCount[currentMetric]}` }}
         </button>
       </div>
 
       <div v-if="platform !== 'darwin'" class="window-controls title-no-drag">
-        <button class="window-button" type="button" @click="emit('minimize-window')">_</button>
-        <button class="window-button" type="button" @click="emit('maximize-window')">□</button>
-        <button class="window-button close" type="button" @click="emit('close-window')">×</button>
+        <button class="window-button" type="button" @click="emit('minimize-window')">
+          <span class="window-glyph minimize" />
+        </button>
+        <button class="window-button" type="button" @click="emit('maximize-window')">
+          <span class="window-glyph maximize" />
+        </button>
+        <button class="window-button close" type="button" @click="emit('close-window')">
+          <span class="window-glyph close-glyph" />
+        </button>
       </div>
     </div>
   </div>
@@ -70,7 +123,9 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
 <style scoped>
 .title-bar-editor-bg {
   height: var(--titleBarHeight);
-  background: var(--editorBgColor);
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(16px);
 }
 
 .title-bar {
@@ -93,10 +148,10 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
 }
 
 .title {
-  padding: 0 460px 0 142px;
+  padding: 0 470px 0 150px;
   height: 100%;
   line-height: var(--titleBarHeight);
-  font-size: 14px;
+  font-size: 13px;
   text-align: center;
 }
 
@@ -110,6 +165,7 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
 
 .filename {
   color: var(--editorColor);
+  font-weight: 600;
 }
 
 .separator {
@@ -118,7 +174,7 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
 }
 
 .save-dot {
-  margin-left: 3px;
+  margin-left: 13px;
   width: 7px;
   height: 7px;
   display: inline-block;
@@ -137,26 +193,70 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
   position: absolute;
   top: 0;
   right: 138px;
-  width: 420px;
+  width: 470px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
 }
 
+.toolbar-menu {
+  position: relative;
+}
+
 .toolbar-button {
   cursor: pointer;
   font-size: 12px;
-  color: var(--editorColor50);
+  color: var(--editorColor60);
   line-height: 24px;
-  padding: 2px 8px;
-  border-radius: 3px;
+  padding: 3px 10px;
+  border-radius: 999px;
   border: none;
   background: transparent;
 }
 
+.open-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.open-caret {
+  font-size: 10px;
+  color: var(--editorColor40);
+}
+
+.open-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 120px;
+  padding: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.open-menu-item {
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--editorColor70);
+  text-align: left;
+  box-shadow: none;
+}
+
+.open-menu-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .toolbar-button:hover:not(:disabled) {
-  background: var(--sideBarBgColor);
+  background: rgba(255, 255, 255, 0.8);
   color: var(--sideBarTitleColor);
 }
 
@@ -168,17 +268,17 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
 .word-count {
   cursor: pointer;
   font-size: 12px;
-  color: var(--editorColor30);
+  color: var(--editorColor40);
   text-align: center;
   line-height: 24px;
-  padding: 2px 8px;
-  border-radius: 3px;
+  padding: 3px 10px;
+  border-radius: 999px;
   border: none;
   background: transparent;
 }
 
 .word-count:hover {
-  background: var(--sideBarBgColor);
+  background: rgba(255, 255, 255, 0.8);
   color: var(--sideBarTitleColor);
 }
 
@@ -205,11 +305,55 @@ const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar
 }
 
 .window-button:hover {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .window-button.close:hover {
   background: rgb(228, 79, 79);
   color: white;
+}
+
+.window-glyph {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+}
+
+.window-glyph.minimize::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 1.5px;
+  background: currentColor;
+}
+
+.window-glyph.maximize::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border: 1.5px solid currentColor;
+  border-radius: 1px;
+}
+
+.window-glyph.close-glyph::before,
+.window-glyph.close-glyph::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: -1px;
+  width: 14px;
+  height: 1.5px;
+  background: currentColor;
+}
+
+.window-glyph.close-glyph::before {
+  transform: rotate(45deg);
+}
+
+.window-glyph.close-glyph::after {
+  transform: rotate(-45deg);
 }
 </style>

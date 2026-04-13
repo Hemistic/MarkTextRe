@@ -46,9 +46,10 @@ const emit = defineEmits<{
   flex-direction: row;
   height: 35px;
   user-select: none;
-  box-shadow: 0 0 9px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  background: var(--floatBgColor);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
 }
 
 .scrollable-tabs {
@@ -69,15 +70,21 @@ const emit = defineEmits<{
 
 .tabs-container > li {
   position: relative;
-  padding: 0 8px;
+  padding: 0 10px 0 12px;
   color: var(--editorColor50);
   font-size: 12px;
   line-height: 35px;
   height: 35px;
   max-width: 280px;
-  background: var(--floatBgColor);
+  background: transparent;
   display: flex;
   align-items: center;
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.tabs-container > li:hover {
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .tabs-container > li > span {
@@ -88,8 +95,9 @@ const emit = defineEmits<{
 }
 
 .tabs-container > li.active {
-  background: var(--itemBgColor);
+  background: rgba(255, 255, 255, 0.96);
   z-index: 2;
+  color: var(--editorColor80);
 }
 
 .tabs-container > li.active::after {
@@ -106,17 +114,18 @@ const emit = defineEmits<{
   opacity: 0.8;
   border: none;
   background: transparent;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--editorColor50);
+  border-radius: 999px;
 }
 
 .close-icon:hover {
-  background: var(--sideBarItemHoverBgColor);
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .unsaved-dot {
@@ -142,5 +151,10 @@ const emit = defineEmits<{
   height: 24px;
   padding: 0;
   color: var(--editorColor50);
+  border-radius: 999px;
+}
+
+.new-file button:hover {
+  background: rgba(0, 0, 0, 0.06);
 }
 </style>

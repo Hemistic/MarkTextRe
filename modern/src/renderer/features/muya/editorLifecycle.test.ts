@@ -21,7 +21,8 @@ describe('editorLifecycle', () => {
     expect(constructorSpy).toHaveBeenCalledWith(host, expect.objectContaining({
       markdown: '# Demo',
       focusMode: false,
-      hideQuickInsertHint: true
+      hideQuickInsertHint: false,
+      footnote: false
     }))
     expect(typeof editor.quickInsert).toBe('object')
     expect(typeof editor.codePicker).toBe('object')

@@ -8,6 +8,8 @@ const createEditor = () => ({
   createTab: vi.fn(),
   openDocument: vi.fn(async () => {}),
   openDocumentAtPath: vi.fn(async (_pathname: string) => {}),
+  openFolder: vi.fn(async () => {}),
+  openFolderAtPath: vi.fn(async (_pathname: string) => true),
   saveActiveDocument: vi.fn(async () => {}),
   saveActiveDocumentAs: vi.fn(async () => {})
 })

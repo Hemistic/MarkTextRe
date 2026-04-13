@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
-import type { AppBootstrap } from '@shared/contracts'
+import type { AppBootstrap, ProjectTreeNode } from '@shared/contracts'
 import type { EditorWorkspaceViewState } from '../features/editor/workspaceViewSupport'
 import type { DocumentWordCount, EditorTab } from '../features/editor/types'
 import { useHomeViewBindings } from './useHomeViewBindings'
@@ -19,13 +19,18 @@ const bootstrap: AppBootstrap = {
 describe('useHomeViewBindings', () => {
   it('builds view bindings from renderer state and actions', async () => {
     const sideBarMode = ref<'files' | 'search' | 'toc' | ''>('files')
+    const showTabBar = computed(() => true)
     const actions = {
       closeTab: vi.fn(),
       closeWindow: vi.fn(async () => {}),
       createDocument: vi.fn(),
       maximizeWindow: vi.fn(async () => {}),
       minimizeWindow: vi.fn(async () => {}),
+      openPath: vi.fn(async () => {}),
       openDocument: vi.fn(async () => {}),
+      openDocumentAtPath: vi.fn(async (_pathname: string) => {}),
+      openFolder: vi.fn(async () => {}),
+      openFolderAtPath: vi.fn(async (_pathname: string) => true),
       openRecentDocument: vi.fn(async (_pathname: string) => {}),
       openSettings: vi.fn(),
       openSampleDocument: vi.fn(),
@@ -38,11 +43,22 @@ describe('useHomeViewBindings', () => {
       handleEditorChange: vi.fn(),
       handleHeadingSelect: vi.fn(),
       openSearchPanel: vi.fn(async () => {}),
+      replaceAll: vi.fn(),
+      replaceCurrent: vi.fn(),
+      replaceQuery: ref('updated'),
       refreshActiveDocumentSearch: vi.fn(),
       searchActiveIndex: ref(1),
+      searchError: ref(''),
+      searchOptions: ref({
+        isCaseSensitive: false,
+        isWholeWord: false,
+        isRegexp: false
+      }),
       searchQuery: ref('term'),
       searchTotal: ref(3),
       stepSearch: vi.fn(),
+      toggleSearchOption: vi.fn(),
+      updateReplace: vi.fn(),
       updateSearch: vi.fn()
     }
 
@@ -86,13 +102,25 @@ describe('useHomeViewBindings', () => {
       character: 8,
       all: 8
     }
+    const projectTree = ref<ProjectTreeNode | null>({
+      id: 'D:/docs',
+      pathname: 'D:/docs',
+      name: 'docs',
+      isDirectory: true,
+      isFile: false,
+      isMarkdown: false,
+      files: [],
+      folders: []
+    })
 
     const viewState: EditorWorkspaceViewState = {
       activeDocument: computed<EditorTab | null>(() => doc.value),
       activeTabId: ref('tab-1'),
       bootstrap: ref(bootstrap),
       headings: computed(() => []),
+      projectTree,
       recentDocuments: ref([{ filename: 'recent.md', pathname: 'D:/docs/recent.md' }]),
+      showTabBar: ref(true),
       showHome: computed(() => false),
       sideBarMode,
       tabs,
@@ -107,23 +135,46 @@ describe('useHomeViewBindings', () => {
       actions,
       muyaEditor: ref(null),
       search,
+      showTabBar,
       sideBar: ref(null),
       view: viewState
     })
 
     expect(bindings.sidebarProps.value.mode).toBe('files')
+    expect(bindings.sidebarProps.value.projectTree?.pathname).toBe('D:/docs')
     expect(bindings.sidebarProps.value.searchQuery).toBe('term')
+    expect(bindings.sidebarProps.value.replaceQuery).toBe('updated')
+    expect(bindings.sidebarProps.value.searchError).toBe('')
+    expect(bindings.sidebarProps.value.searchOptions.isRegexp).toBe(false)
     expect(bindings.titleBarProps.value.filename).toBe('example.md')
+    expect(bindings.titleBarProps.value.showPathSegments).toBe(false)
+    expect(bindings.titleBarProps.value.showTabBar).toBe(true)
+    expect(bindings.flags.value.hasTabs).toBe(true)
     expect(bindings.flags.value.hasActiveDocument).toBe(true)
     expect(bindings.editorProps.value.documentId).toBe('tab-1')
 
     bindings.sidebarHandlers.updateMode('search')
+    bindings.sidebarHandlers.updateReplaceQuery('replacement')
+    bindings.sidebarHandlers.toggleSearchOption('isRegexp')
+    bindings.sidebarHandlers.replaceCurrent()
+    bindings.sidebarHandlers.replaceAll()
     bindings.sidebarHandlers.searchNext()
+    await bindings.sidebarHandlers.openPath('D:/docs/example.md')
+    await bindings.sidebarHandlers.openFolder()
+    await bindings.titleBarHandlers.openFile()
+    await bindings.titleBarHandlers.openFolder()
     bindings.titleBarHandlers.saveFile()
     bindings.recentHandlers.openSample()
 
     expect(sideBarMode.value).toBe('search')
+    expect(search.updateReplace).toHaveBeenCalledWith('replacement')
+    expect(search.toggleSearchOption).toHaveBeenCalledWith('isRegexp')
+    expect(search.replaceCurrent).toHaveBeenCalledOnce()
+    expect(search.replaceAll).toHaveBeenCalledOnce()
     expect(search.stepSearch).toHaveBeenCalledWith('next')
+    expect(actions.openDocumentAtPath).toHaveBeenCalledWith('D:/docs/example.md')
+    expect(actions.openPath).toHaveBeenCalledOnce()
+    expect(actions.openFolder).toHaveBeenCalledTimes(2)
     expect(actions.saveDocument).toHaveBeenCalledOnce()
     expect(actions.openSampleDocument).toHaveBeenCalledOnce()
   })
