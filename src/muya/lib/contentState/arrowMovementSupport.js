@@ -11,19 +11,29 @@ import {
   moveToNextBlock,
   moveToPreviousBlock
 } from './arrowCursorMoveSupport'
+import { resolveActiveCursorRange } from './cursorStateSupport'
 
 export const arrowHandler = (contentState, event) => {
   const node = selection.getSelectionStart()
   const paragraph = findNearestParagraph(node)
-  const id = paragraph.id
-  const block = contentState.getBlock(id)
-  const preBlock = contentState.findPreBlockInLocation(block)
-  const nextBlock = contentState.findNextBlockInLocation(block)
-  const { start, end } = selection.getCursorRange()
-  const { topOffset, bottomOffset } = selection.getCursorYOffset(paragraph)
-  if (!start || !end) {
+  if (!paragraph) {
     return
   }
+
+  const block = contentState.getBlock(paragraph.id)
+  if (!block) {
+    return
+  }
+
+  const preBlock = contentState.findPreBlockInLocation(block)
+  const nextBlock = contentState.findNextBlockInLocation(block)
+  const cursorContext = resolveActiveCursorRange(contentState, selection.getCursorRange())
+  if (!cursorContext) {
+    return
+  }
+
+  const { start, end } = cursorContext
+  const { topOffset, bottomOffset } = selection.getCursorYOffset(paragraph)
 
   if (handleMathArrowRight(event, node, start, end)) {
     return

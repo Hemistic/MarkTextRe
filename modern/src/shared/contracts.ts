@@ -33,6 +33,17 @@ export interface DirtyDocumentSummary {
   filename: string
 }
 
+export interface TocItem {
+  content: string
+  lvl: number
+  slug?: string
+}
+
+export interface WindowCloseCoordinator {
+  getDirtyDocuments: () => Promise<DirtyDocumentSummary[]>
+  saveAllDirtyDocuments: () => Promise<boolean>
+}
+
 export interface EditorDocument {
   id: string
   pathname: string | null
@@ -62,7 +73,7 @@ export interface EditorSessionTab {
   savedMarkdown: string
   cursor: unknown
   history: unknown
-  toc: Array<{ content: string, lvl: number, slug?: string }>
+  toc: TocItem[]
 }
 
 export interface EditorSessionState {
@@ -96,10 +107,7 @@ export interface MarkTextAppApi {
   setSessionState: (sessionState: EditorSessionState) => Promise<void>
   confirmCloseDocument: (filename: string) => Promise<CloseDocumentAction>
   registerAppCommandHandler: (handler: (message: AppCommandMessage) => void) => () => void
-  registerWindowCloseCoordinator: (coordinator: {
-    getDirtyDocuments: () => Promise<DirtyDocumentSummary[]>
-    saveAllDirtyDocuments: () => Promise<boolean>
-  }) => void
+  registerWindowCloseCoordinator: (coordinator: WindowCloseCoordinator) => void
 }
 
 export interface MarkTextFilesApi {

@@ -9,6 +9,7 @@ import {
   triggerMuyaSelectionChange,
   triggerMuyaSelectionFormats
 } from '../muyaRuntimeAccessSupport'
+import { resolveActiveCursorRange } from '../contentState/cursorStateSupport'
 
 export const listenKeyboardFloatState = keyboard => {
   keyboard.floatListener = (tool, status) => {
@@ -86,10 +87,12 @@ export const bindKeyboardEditorStateDispatch = keyboard => {
       return
     }
 
-    const { start, end } = selection.getCursorRange()
-    if (!start || !end) {
+    const contentState = getMuyaContentState(keyboard.muya)
+    const cursorContext = resolveActiveCursorRange(contentState, selection.getCursorRange())
+    if (!cursorContext) {
       return
     }
+    const { start, end } = cursorContext
 
     if (keyboard.editorStateTimer) clearTimeout(keyboard.editorStateTimer)
     keyboard.editorStateTimer = setTimeout(() => {

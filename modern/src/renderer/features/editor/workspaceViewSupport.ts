@@ -1,16 +1,9 @@
 import { computed, ref } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import type { AppBootstrap, EditorViewMode, RecentDocument } from '@shared/contracts'
-import type { EditorTab, HeadingItem } from './types'
+import type { DocumentWordCount, EditorTab, HeadingItem } from './types'
 
 export type WorkspaceSidebarMode = 'files' | 'search' | 'toc' | ''
-
-export interface DocumentWordCount {
-  word: number
-  paragraph: number
-  character: number
-  all: number
-}
 
 export interface EditorWorkspaceViewState {
   activeDocument: ComputedRef<EditorTab | null>

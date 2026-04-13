@@ -1,4 +1,6 @@
-import type { EditorDocument, EditorTabKind } from '@shared/contracts'
+import type { EditorDocument, EditorTabKind, TocItem } from '@shared/contracts'
+
+export type { TocItem } from '@shared/contracts'
 
 export interface HeadingItem {
   depth: number
@@ -10,12 +12,6 @@ export interface DocumentWordCount {
   paragraph: number
   character: number
   all: number
-}
-
-export interface TocItem {
-  content: string
-  lvl: number
-  slug?: string
 }
 
 export interface EditorTab extends EditorDocument {

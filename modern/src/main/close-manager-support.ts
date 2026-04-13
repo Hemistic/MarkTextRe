@@ -1,10 +1,10 @@
 import type { BrowserWindow } from 'electron'
 import type {
   DirtyDocumentSummary,
+  WindowCloseRequest,
+  WindowCloseRequestKind,
   WindowCloseResponse
 } from '@shared/contracts'
-
-type CloseRequestKind = 'get-dirty-documents' | 'save-all-dirty-documents'
 
 interface CloseEventLike {
   preventDefault: () => void
@@ -30,7 +30,7 @@ interface WindowClosedHandlerOptions {
 export const createWindowCloseRequestSender = (channel: string) => {
   return (
     window: Pick<BrowserWindow, 'webContents'>,
-    request: { requestId: string, kind: CloseRequestKind }
+    request: WindowCloseRequest
   ) => {
     window.webContents.send(channel, request)
   }
@@ -38,13 +38,13 @@ export const createWindowCloseRequestSender = (channel: string) => {
 
 export const requestWindowCloseAction = (
   window: BrowserWindow,
-  kind: CloseRequestKind,
+  kind: WindowCloseRequestKind,
   beginRequest: (
     windowId: number,
-    requestKind: CloseRequestKind,
-    sendRequest: (request: { requestId: string, kind: CloseRequestKind }) => void
+    requestKind: WindowCloseRequestKind,
+    sendRequest: (request: WindowCloseRequest) => void
   ) => Promise<WindowCloseResponse>,
-  sendRequest: (window: BrowserWindow, request: { requestId: string, kind: CloseRequestKind }) => void
+  sendRequest: (window: BrowserWindow, request: WindowCloseRequest) => void
 ) => {
   return beginRequest(window.id, kind, request => {
     sendRequest(window, request)

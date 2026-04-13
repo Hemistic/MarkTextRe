@@ -6,7 +6,6 @@ import {
   getTextContent
 } from './dom'
 import {
-  getSelectionEditor,
   querySelectionRoot
 } from './root'
 import {
@@ -17,11 +16,12 @@ import {
 export const applyCursorRangeSupport = Selection => {
   Object.assign(Selection.prototype, {
     setCursorRange (cursorRange) {
-      const { anchor, focus } = cursorRange
+      const anchor = cursorRange && (cursorRange.anchor || cursorRange.start)
+      const focus = cursorRange && (cursorRange.focus || cursorRange.end)
       const anchorParagraph = anchor && anchor.key ? querySelectionRoot(`#${anchor.key}`) : null
       const focusParagraph = focus && focus.key ? querySelectionRoot(`#${focus.key}`) : null
       if (!canRestoreCursorRange(cursorRange, anchorParagraph, focusParagraph)) {
-        return
+        return false
       }
 
       const getNodeAndOffset = (node, offset) => {
@@ -99,7 +99,7 @@ export const applyCursorRangeSupport = Selection => {
         focusTarget.offset
       )
       if (!normalizedTargets) {
-        return
+        return false
       }
 
       const {
@@ -109,8 +109,12 @@ export const applyCursorRangeSupport = Selection => {
         focusOffset
       } = normalizedTargets
 
-      this.select(anchorNode, anchorOffset)
-      this.setFocus(focusNode, focusOffset)
+      const range = this.select(anchorNode, anchorOffset)
+      if (!range) {
+        return false
+      }
+
+      return this.setFocus(focusNode, focusOffset) !== false
     },
 
     isValidCursorNode (node) {
@@ -119,7 +123,7 @@ export const applyCursorRangeSupport = Selection => {
         node = node.parentNode
       }
 
-      return node.closest('span.ag-paragraph')
+      return typeof node.closest === 'function' && node.closest('.ag-paragraph')
     },
 
     getCursorRange () {
@@ -146,12 +150,6 @@ export const applyCursorRangeSupport = Selection => {
         focusNode = anchorNode
         focusOffset = anchorOffset
       } else if (!isAnchorValid && !isFocusValid) {
-        const editor = getSelectionEditor()
-        const host = editor && editor.parentNode
-        if (host && typeof host.blur === 'function') {
-          host.blur()
-        }
-
         return new Cursor({
           start: null,
           end: null,

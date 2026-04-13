@@ -41,11 +41,15 @@ export const finalizeEnter = (contentState, block, newBlock, getParagraphBlock) 
   } else {
     cursorBlock = getParagraphBlock(block)
   }
+  let needRenderAll = false
 
   if (!preserveExistingCursor) {
     cursorBlock = getParagraphBlock(cursorBlock)
-    const cursorTarget = resolveEnterCursorTarget(cursorBlock)
-    const key = cursorTarget.key
+    const cursorTarget = resolveEnterCursorTarget(cursorBlock) || cursorBlock || newBlock || block
+    const key = cursorTarget && cursorTarget.key
+    if (!key) {
+      return needRenderAll ? contentState.render() : contentState.partialRender()
+    }
     let offset = 0
 
     if (htmlNeedFocus) {
@@ -58,8 +62,7 @@ export const finalizeEnter = (contentState, block, newBlock, getParagraphBlock) 
     }
   }
 
-  let needRenderAll = false
-  if (contentState.isCollapse() && cursorBlock.type === 'p') {
+  if (contentState.isCollapse() && cursorBlock && cursorBlock.type === 'p') {
     contentState.checkInlineUpdate(cursorBlock.children[0])
     needRenderAll = true
   }

@@ -2,6 +2,18 @@ import { nextTick, ref, type Ref } from 'vue'
 import type { EditorChangePayload } from '../features/editor/types'
 import type { MuyaEditorExpose, SidebarExpose } from './homeEditorTypes'
 
+export interface HomeSearchState {
+  searchQuery: Ref<string>
+  searchTotal: Ref<number>
+  searchActiveIndex: Ref<number>
+  openSearchPanel: () => Promise<void>
+  updateSearch: (value: string) => void
+  stepSearch: (direction: 'prev' | 'next') => void
+  handleHeadingSelect: (slug: string) => void
+  handleEditorChange: (payload: EditorChangePayload) => void
+  refreshActiveDocumentSearch: () => void
+}
+
 interface UseHomeSearchOptions {
   applyEditorChange: (payload: EditorChangePayload) => void
   muyaEditor: Ref<MuyaEditorExpose | null>
@@ -14,7 +26,7 @@ export const useHomeSearch = ({
   muyaEditor,
   sideBar,
   sideBarMode
-}: UseHomeSearchOptions) => {
+}: UseHomeSearchOptions): HomeSearchState => {
   const searchQuery = ref('')
   const searchTotal = ref(0)
   const searchActiveIndex = ref(-1)

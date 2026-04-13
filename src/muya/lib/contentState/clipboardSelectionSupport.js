@@ -1,8 +1,7 @@
 import selection from '../selection'
 import { htmlToMarkdown } from '../utils/markdownHtml'
 import marked from '../parser/marked'
-import { normalizeClipboardWrapper } from './clipboardSupport'
-import { getContentStateDocument } from './runtimeDomSupport'
+import { createClipboardWrapper } from './clipboardWrapperSupport'
 import { getContentStateOptions } from './runtimeOptionSupport'
 
 export const getCodeSelectionClipboardData = (contentState, start, end) => {
@@ -11,6 +10,9 @@ export const getCodeSelectionClipboardData = (contentState, start, end) => {
   }
 
   const startBlock = contentState.getBlock(start.key)
+  if (!startBlock) {
+    return null
+  }
   const { type, text, functionType } = startBlock
   if (type !== 'span' || functionType !== 'codeContent') {
     return null
@@ -25,13 +27,10 @@ export const getCodeSelectionClipboardData = (contentState, start, end) => {
 
 export const getSelectionClipboardData = contentState => {
   const html = selection.getSelectionHtml()
-  const doc = getContentStateDocument(contentState)
-  if (!doc) {
+  const wrapper = createClipboardWrapper(contentState, html)
+  if (!wrapper) {
     return { html: '', text: '' }
   }
-  const wrapper = doc.createElement('div')
-  wrapper.innerHTML = html
-  normalizeClipboardWrapper(contentState, wrapper)
 
   let htmlData = wrapper.innerHTML
   const textData = htmlToMarkdown(contentState, htmlData)

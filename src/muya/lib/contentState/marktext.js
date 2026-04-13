@@ -2,6 +2,7 @@
 
 import { extractWord, offsetToWordCursor, validateLineCursor } from '../marktext/spellchecker'
 import selection from '../selection'
+import { resolveCursorRangeBlocks } from './cursorStateSupport'
 
 const marktextApi = ContentState => {
   /**
@@ -17,9 +18,14 @@ const marktextApi = ContentState => {
    */
   ContentState.prototype._replaceCurrentWordInlineUnsafe = function (word, replacement) {
     // Right clicking on a misspelled word select the whole word by Chromium.
-    const { start, end } = selection.getCursorRange()
+    const cursorContext = resolveCursorRangeBlocks(this, selection.getCursorRange())
+    if (!cursorContext) {
+      return false
+    }
+
+    const { start, end, startBlock } = cursorContext
     const cursor = Object.assign({}, { start, end })
-    cursor.start.block = this.getBlock(start.key)
+    cursor.start.block = startBlock
 
     if (!validateLineCursor(cursor)) {
       console.warn('Unable to replace word: multiple lines are selected.', JSON.stringify(cursor))

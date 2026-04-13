@@ -1,26 +1,9 @@
-import { CLASS_OR_ID } from '../config'
 import { getStateRenderContainer } from './runtimeRenderAccessSupport'
+import { resolveEditorRoot } from './runtimeDomRootSupport'
 import {
   getGlobalDocument,
-  matchesSelector,
   queryFromRoot
 } from '../utils/domQuerySupport'
-
-const resolveEditorRoot = container => {
-  if (!container) {
-    return null
-  }
-
-  if (matchesSelector(container, `#${CLASS_OR_ID.AG_EDITOR_ID}`)) {
-    return container
-  }
-
-  if (typeof container.querySelector === 'function') {
-    return container.querySelector(`#${CLASS_OR_ID.AG_EDITOR_ID}`) || container.firstElementChild || container
-  }
-
-  return null
-}
 
 export const getContentStateContainer = contentState => {
   const container = contentState && contentState.muya ? contentState.muya.container : null

@@ -10,6 +10,7 @@ import {
   getMuyaEventCenter,
   triggerMuyaChange
 } from '../muyaRuntimeAccessSupport'
+import { resolveActiveCursorRange } from '../contentState/cursorStateSupport'
 import { scheduleKeyboardInputChangeDispatch } from './keyboardRuntimeSupport'
 
 const shouldPreventKeyboardFloatDefault = keyboard => {
@@ -190,17 +191,22 @@ export const bindKeyboardKeyup = keyboard => {
       })
     }
 
-    const { anchor, focus, start, end } = selection.getCursorRange()
-    if (!anchor || !focus) {
+    const cursorContext = resolveActiveCursorRange(contentState, selection.getCursorRange())
+    if (!cursorContext) {
       return
     }
+    const { start, end } = cursorContext
+    const anchor = start
+    const focus = end
     if (
       !keyboard.isComposed &&
       event.key !== EVENT_KEYS.Enter &&
       event.key !== EVENT_KEYS.Backspace &&
       event.key !== EVENT_KEYS.Delete
     ) {
-      const { anchor: oldAnchor, focus: oldFocus } = contentState.cursor
+      const oldCursor = contentState.cursor || {}
+      const oldAnchor = oldCursor.anchor || oldCursor.start || {}
+      const oldFocus = oldCursor.focus || oldCursor.end || {}
       if (
         anchor.key !== oldAnchor.key ||
         anchor.offset !== oldAnchor.offset ||
@@ -208,7 +214,7 @@ export const bindKeyboardKeyup = keyboard => {
         focus.offset !== oldFocus.offset
       ) {
         const needRender = contentState.checkNeedRender(contentState.cursor) || contentState.checkNeedRender({ start, end })
-        contentState.cursor = { anchor, focus }
+        contentState.cursor = { anchor, focus, start, end }
         if (needRender) {
           return contentState.partialRender()
         }

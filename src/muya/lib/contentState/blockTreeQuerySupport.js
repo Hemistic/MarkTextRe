@@ -1,4 +1,6 @@
 
+import { hasCursorEdgeKey } from './cursorStateSupport'
+
 export const getBlock = (contentState, key) => {
   if (!key) return null
   let result = null
@@ -55,9 +57,10 @@ export const isInclude = (contentState, parent, target) => {
   return children.some(child => contentState.isInclude(child, target))
 }
 
-export const getActiveBlocks = contentState => {
+export const getActiveBlocks = (contentState, activeBlock = null) => {
   const result = []
-  let block = contentState.getBlock(contentState.cursor.start.key)
+  const cursorStart = contentState && contentState.cursor ? contentState.cursor.start : null
+  let block = activeBlock || (hasCursorEdgeKey(cursorStart) ? contentState.getBlock(cursorStart.key) : null)
   if (block) {
     result.push(block)
   }

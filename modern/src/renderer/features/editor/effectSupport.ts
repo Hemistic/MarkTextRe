@@ -1,4 +1,8 @@
-import type { EditorSessionState, EditorViewMode } from '@shared/contracts'
+import type {
+  EditorSessionState,
+  EditorViewMode,
+  WindowCloseCoordinator
+} from '@shared/contracts'
 import type { EditorTab } from './types'
 import { getDirtyDocumentSummaries } from './document'
 import { createPersistedSessionState } from './session'
@@ -23,11 +27,6 @@ interface SessionPersistenceTaskInput {
   tabs: EditorTab[]
   untitledSequence: number
   viewMode: EditorViewMode
-}
-
-export interface WindowCloseCoordinator {
-  getDirtyDocuments: () => Promise<ReturnType<typeof getDirtyDocumentSummaries>>
-  saveAllDirtyDocuments: () => Promise<boolean>
 }
 
 export const createDelayedTaskScheduler = ({

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  canRenderRange,
   createEmptySearchMatches,
   getRenderState,
   prepareRenderContext,
@@ -34,6 +35,7 @@ describe('muya renderPipelineStateSupport', () => {
 
   it('prepares render context and marks the active search match', () => {
     const stateRender = createStateRender()
+    const renderBlock = { key: 'render-block' }
     const activeBlocks = [{ key: 'b' }]
     const matches = [{ key: 'm1' }, { key: 'm2' }]
     const contentState = {
@@ -49,7 +51,7 @@ describe('muya renderPipelineStateSupport', () => {
       getActiveBlocks: vi.fn().mockReturnValue(activeBlocks)
     }
 
-    const context = prepareRenderContext(contentState)
+    const context = prepareRenderContext(contentState, renderBlock)
 
     expect(context).toEqual({
       stateRender,
@@ -57,6 +59,7 @@ describe('muya renderPipelineStateSupport', () => {
       activeBlocks,
       matches
     })
+    expect(contentState.getActiveBlocks).toHaveBeenCalledWith(renderBlock)
     expect(matches[0]).toMatchObject({ active: false })
     expect(matches[1]).toMatchObject({ active: true })
   })
@@ -67,5 +70,13 @@ describe('muya renderPipelineStateSupport', () => {
     expect(resolveRenderIndices(blocks, 'b', 'c')).toEqual([1, 3])
     expect(resolveRenderIndices(blocks, 'missing', 'missing')).toEqual([0, 3])
     expect(resolveRenderIndices(blocks, undefined, 'b')).toEqual([0, 2])
+  })
+
+  it('rejects stale partial render ranges when keys are gone', () => {
+    const blocks = [{ key: 'a' }, { key: 'b' }, { key: 'c' }]
+
+    expect(canRenderRange(blocks, 'a', 'c')).toBe(true)
+    expect(canRenderRange(blocks, 'missing', 'c')).toBe(false)
+    expect(canRenderRange(blocks, 'a', 'missing')).toBe(false)
   })
 })

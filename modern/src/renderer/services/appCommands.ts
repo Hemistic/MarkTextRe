@@ -1,14 +1,9 @@
 import type {
   AppCommandMessage,
   CloseDocumentAction,
-  DirtyDocumentSummary
+  WindowCloseCoordinator
 } from '@shared/contracts'
 import { getMarkTextApi } from './api'
-
-export interface WindowCloseCoordinator {
-  getDirtyDocuments: () => Promise<DirtyDocumentSummary[]>
-  saveAllDirtyDocuments: () => Promise<boolean>
-}
 
 export type AppCommandHandler = (message: AppCommandMessage) => void
 

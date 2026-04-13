@@ -36,8 +36,8 @@ export const registerBlockTreeRelationApi = ContentState => {
     return isInclude(this, parent, target)
   }
 
-  ContentState.prototype.getActiveBlocks = function () {
-    return getActiveBlocks(this)
+  ContentState.prototype.getActiveBlocks = function (activeBlock) {
+    return getActiveBlocks(this, activeBlock)
   }
 
   ContentState.prototype.findOutMostBlock = function (block) {

@@ -56,12 +56,14 @@ describe('files', () => {
   it('opens and normalizes documents through injected runtime services', async () => {
     const runtimeServices = {
       openMarkdown: vi.fn(async () => ({
+        id: 'D:/docs/opened.md',
         pathname: 'D:/docs/opened.md',
         filename: 'opened.md',
         markdown: '# Opened\n',
         dirty: false
       })),
       openMarkdownAtPath: vi.fn(async (pathname: string) => ({
+        id: pathname,
         pathname,
         filename: 'reopened.md',
         markdown: '# Reopened\n',

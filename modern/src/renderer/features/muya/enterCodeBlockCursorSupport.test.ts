@@ -16,6 +16,12 @@ describe('muya enterCodeBlockCursorSupport', () => {
     expect(resolveEnterCursorTarget(preBlock)).toBe(codeContent)
   })
 
+  it('falls back safely when a fenced code block has no nested children yet', () => {
+    const preBlock = { key: 'pre', type: 'pre', children: [] }
+
+    expect(resolveEnterCursorTarget(preBlock)).toBe(preBlock)
+  })
+
   it('detects when the current cursor is already inside the converted code block', () => {
     const preBlock = { key: 'pre', type: 'pre' }
     const codeBlock = { key: 'code', type: 'code' }

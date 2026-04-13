@@ -11,35 +11,45 @@ import {
   scheduleCodeBlockRender
 } from './inputRenderSupport'
 import { queryContentState } from './runtimeDomSupport'
+import {
+  hasCursorEdgeKey,
+  normalizeCursorRange,
+  resolveActiveCursorRange
+} from './cursorStateSupport'
+import { tryHandleTrailingNewlineInsert } from './inputTrailingNewlineSupport'
 
 export const inputHandler = (contentState, event, notEqual = false) => {
-  const { start, end } = selection.getCursorRange()
-  if (!start || !end) {
+  const cursorContext = resolveActiveCursorRange(contentState, selection.getCursorRange())
+  if (!cursorContext) {
     return
   }
 
-  const { start: oldStart, end: oldEnd } = contentState.cursor
-  const key = start.key
-  const block = contentState.getBlock(key)
-  const paragraph = queryContentState(contentState, `#${key}`)
+  const normalizedCursor = normalizeCursorRange(cursorContext)
+  if (!normalizedCursor) {
+    return
+  }
+
+  const { anchor, focus, start, end } = normalizedCursor
+  const { startBlock: block } = cursorContext
+  const { start: oldStart, end: oldEnd } = contentState.cursor || {}
+  if (!hasCursorEdgeKey(oldStart) || !hasCursorEdgeKey(oldEnd)) {
+    contentState.cursor = { anchor, focus, start, end }
+    return
+  }
 
   if (
-    oldStart.key === oldEnd.key &&
-    oldStart.offset === oldEnd.offset &&
-    block.text.endsWith('\n') &&
-    oldStart.offset === block.text.length &&
-    event.inputType === 'insertText'
+    tryHandleTrailingNewlineInsert({
+      contentState,
+      block,
+      cursor: normalizedCursor,
+      event
+    })
   ) {
-    event.preventDefault()
-    block.text += event.data
-    const offset = block.text.length
-    contentState.cursor = {
-      start: { key, offset },
-      end: { key, offset }
-    }
-    contentState.singleRender(block)
     return inputHandler(contentState, event, true)
   }
+
+  const key = start.key
+  const paragraph = queryContentState(contentState, `#${key}`)
 
   if (!paragraph) {
     return
@@ -71,7 +81,7 @@ export const inputHandler = (contentState, event, notEqual = false) => {
 
   dispatchQuickInsert(contentState, paragraph, block)
 
-  contentState.cursor = { start, end }
+  contentState.cursor = { anchor, focus, start, end }
 
   if (block && block.type === 'span' && block.functionType === 'codeContent') {
     const hasTokenMarkup = !!paragraph?.querySelector?.('.token')

@@ -1,4 +1,5 @@
 import selection from '../selection'
+import { resolveActiveCursorRange } from './cursorStateSupport'
 
 export const docDeleteHandler = (contentState, event) => {
   const { selectedImage } = contentState
@@ -15,12 +16,12 @@ export const docDeleteHandler = (contentState, event) => {
 }
 
 export const deleteHandler = (contentState, event) => {
-  const { start, end } = selection.getCursorRange()
-  if (!start || !end) {
+  const cursorContext = resolveActiveCursorRange(contentState, selection.getCursorRange())
+  if (!cursorContext) {
     return
   }
 
-  const startBlock = contentState.getBlock(start.key)
+  const { start, end, startBlock } = cursorContext
   const nextBlock = contentState.findNextBlockInLocation(startBlock)
 
   if (startBlock.type === 'figure') event.preventDefault()

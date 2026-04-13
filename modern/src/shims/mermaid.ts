@@ -1,5 +1,3 @@
-import mermaidModule from 'mermaid'
-
-const mermaid = (mermaidModule as typeof mermaidModule & { default?: typeof mermaidModule }).default ?? mermaidModule
+import mermaid from 'mermaid/dist/mermaid.core.mjs'
 
 export default mermaid

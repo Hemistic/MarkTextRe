@@ -1,4 +1,3 @@
-import { getSelectionRoot } from '../selection/root'
 import { getContentStateEditor } from './runtimeDomSupport'
 import {
   getContentStateStateRender,
@@ -6,27 +5,52 @@ import {
 } from './runtimeRenderAccessSupport'
 
 export const hasCursorEndpoints = cursor => {
+  const anchor = cursor && (cursor.anchor || cursor.start)
+  const focus = cursor && (cursor.focus || cursor.end)
+  const start = cursor && (cursor.start || anchor)
+  const end = cursor && (cursor.end || focus)
+
   return !!(
     cursor &&
-    cursor.anchor &&
-    cursor.focus &&
-    cursor.start &&
-    cursor.end &&
-    cursor.anchor.key &&
-    cursor.focus.key &&
-    cursor.start.key &&
-    cursor.end.key
+    anchor &&
+    focus &&
+    start &&
+    end &&
+    anchor.key &&
+    focus.key &&
+    start.key &&
+    end.key
   )
 }
 
+export const normalizeCursorEndpoints = cursor => {
+  if (!cursor || !hasCursorEndpoints(cursor)) {
+    return null
+  }
+
+  const anchor = cursor.anchor || cursor.start
+  const focus = cursor.focus || cursor.end
+  const start = cursor.start || anchor
+  const end = cursor.end || focus
+
+  return {
+    ...cursor,
+    anchor,
+    focus,
+    start,
+    end
+  }
+}
+
 export const hasCursorBlocks = (contentState, cursor = contentState.cursor) => {
-  if (!hasCursorEndpoints(cursor)) {
+  const normalizedCursor = normalizeCursorEndpoints(cursor)
+  if (!normalizedCursor) {
     return false
   }
 
   return !!(
-    contentState.getBlock(cursor.start.key) &&
-    contentState.getBlock(cursor.end.key)
+    contentState.getBlock(normalizedCursor.start.key) &&
+    contentState.getBlock(normalizedCursor.end.key)
   )
 }
 
@@ -34,32 +58,14 @@ export const isConnectedNode = node => {
   return !!node && node.isConnected !== false
 }
 
-export const isSelectionRootCompatible = (selectionRoot, editor) => {
-  if (!selectionRoot || !editor) {
-    return false
-  }
-
-  if (selectionRoot.nodeType === 9) {
-    return true
-  }
-
-  if (selectionRoot === editor) {
-    return true
-  }
-
-  return typeof editor.contains === 'function' && editor.contains(selectionRoot)
-}
-
 export const getCursorRestoreContext = contentState => {
   const stateRender = getContentStateStateRender(contentState)
   const renderContainer = getStateRenderContainer(stateRender)
   const editor = getContentStateEditor(contentState)
-  const selectionRoot = getSelectionRoot()
 
   return {
     renderContainer,
-    editor,
-    selectionRoot
+    editor
   }
 }
 
@@ -68,13 +74,9 @@ export const shouldRestoreContentCursor = (contentState) => {
     return false
   }
 
-  const { renderContainer, editor, selectionRoot } = getCursorRestoreContext(contentState)
+  const { renderContainer, editor } = getCursorRestoreContext(contentState)
 
   if (!isConnectedNode(renderContainer) || !isConnectedNode(editor)) {
-    return false
-  }
-
-  if (!isSelectionRootCompatible(selectionRoot, editor)) {
     return false
   }
 
@@ -89,4 +91,26 @@ export const resolveRenderCursorAction = (contentState, isRenderCursor = true) =
   return shouldRestoreContentCursor(contentState)
     ? 'restore'
     : 'skip'
+}
+
+export const applyResolvedRenderCursorAction = (
+  contentState,
+  action,
+  restoreCursor,
+  blurContentState
+) => {
+  if (action === 'restore') {
+    if (restoreCursor(contentState) !== false) {
+      return 'restore'
+    }
+
+    return 'skip'
+  }
+
+  if (action === 'blur') {
+    blurContentState(contentState)
+    return 'blur'
+  }
+
+  return 'skip'
 }

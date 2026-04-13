@@ -9,6 +9,9 @@ export const selectionFormats = (contentState, { start, end } = selection.getCur
   }
 
   const startBlock = contentState.getBlock(start.key)
+  if (!startBlock) {
+    return { formats: [], tokens: [], neighbors: [] }
+  }
   const formats = []
   const neighbors = []
   let tokens = []

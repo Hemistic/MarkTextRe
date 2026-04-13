@@ -31,7 +31,7 @@ export const createMainWindowOptions = (options: {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
       webSecurity: true,
       spellcheck: true
     }

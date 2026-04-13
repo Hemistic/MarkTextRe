@@ -1,4 +1,5 @@
 import selection from '../selection'
+import { resolveCursorRangeBlocks } from './cursorStateSupport'
 
 export const docCutHandler = (contentState, event) => {
   if (!contentState.selectedTableCells) {
@@ -25,13 +26,12 @@ export const cutHandler = contentState => {
     return
   }
 
-  const { start, end } = selection.getCursorRange()
-  if (!start || !end) {
+  const cursorContext = resolveCursorRangeBlocks(contentState, selection.getCursorRange())
+  if (!cursorContext) {
     return
   }
 
-  const startBlock = contentState.getBlock(start.key)
-  const endBlock = contentState.getBlock(end.key)
+  const { start, end, startBlock, endBlock } = cursorContext
   startBlock.text = startBlock.text.substring(0, start.offset) + endBlock.text.substring(end.offset)
   if (start.key !== end.key) {
     contentState.removeBlocks(startBlock, endBlock)

@@ -19,11 +19,27 @@ describe('muya selectionRangeGuardSupport', () => {
     expect(canRestoreCursorRange(cursorRange, { nodeType: 1, isConnected: false }, { nodeType: 1, isConnected: true })).toBe(false)
   })
 
+  it('accepts legacy start/end-only cursor ranges for restoration guards', () => {
+    const cursorRange = {
+      start: { key: 'a', offset: 1 },
+      end: { key: 'b', offset: 1 }
+    }
+
+    expect(canRestoreCursorRange(cursorRange, { nodeType: 1, isConnected: true }, { nodeType: 1, isConnected: true })).toBe(true)
+  })
+
   it('clamps resolved selection offsets to available text length', () => {
     const anchorNode = { nodeType: 3, isConnected: true, textContent: 'abc' }
     const focusNode = { nodeType: 3, isConnected: true, textContent: 'xy' }
+    const elementNode = {
+      nodeType: 1,
+      isConnected: true,
+      childNodes: [{}, {}],
+      textContent: 'abcdef'
+    }
 
     expect(clampSelectionOffset(anchorNode, 10)).toBe(3)
+    expect(clampSelectionOffset(elementNode, 10)).toBe(2)
     expect(normalizeSelectionTargets(anchorNode, 9, focusNode, 8)).toEqual({
       anchorNode,
       anchorOffset: 3,

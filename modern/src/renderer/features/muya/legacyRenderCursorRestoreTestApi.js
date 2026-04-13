@@ -1,8 +1,9 @@
 export {
+  applyResolvedRenderCursorAction,
   getCursorRestoreContext,
   hasCursorBlocks,
   hasCursorEndpoints,
-  isSelectionRootCompatible,
+  normalizeCursorEndpoints,
   resolveRenderCursorAction,
   shouldRestoreContentCursor
 } from '../../../../../src/muya/lib/contentState/renderCursorRestoreSupport.js'

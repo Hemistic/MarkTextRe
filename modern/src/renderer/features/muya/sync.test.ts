@@ -3,6 +3,7 @@ import {
   createMuyaSyncState,
   handleMuyaChange,
   restoreMuyaFromModel,
+  shouldEmitModelUpdateForChange,
   shouldSyncMuyaFromModel
 } from './sync'
 
@@ -51,5 +52,17 @@ describe('muya sync', () => {
     state.applyingExternalUpdate = false
     const unchanged = handleMuyaChange(state, { markdown: '# External Echo' }, '# External Echo')
     expect(unchanged.shouldEmitModelUpdate).toBe(false)
+  })
+
+  it('creates a shared decision helper for emitting model updates', () => {
+    const state = createMuyaSyncState('# Base')
+
+    expect(shouldEmitModelUpdateForChange(state, '# Base Diff', '# Base')).toBe(true)
+
+    state.applyingExternalUpdate = true
+    expect(shouldEmitModelUpdateForChange(state, '# Base Diff', '# Base')).toBe(false)
+
+    state.applyingExternalUpdate = false
+    expect(shouldEmitModelUpdateForChange(state, '# Base Diff', '# Base Diff')).toBe(false)
   })
 })

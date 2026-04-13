@@ -4,11 +4,11 @@ import LegacyRecent from '../components/LegacyRecent.vue'
 import LegacySidebar from '../components/LegacySidebar.vue'
 import LegacyTabs from '../components/LegacyTabs.vue'
 import LegacyTitleBar from '../components/LegacyTitleBar.vue'
-import { useHomeViewModel } from './useHomeViewModel'
+import { useHomeViewService } from './useHomeViewService'
 
 const AsyncMuyaEditor = defineAsyncComponent(() => import('../components/MuyaEditor.vue'))
 
-const { bindings } = useHomeViewModel()
+const { bindings } = useHomeViewService()
 const {
   editorHandlers,
   editorProps,

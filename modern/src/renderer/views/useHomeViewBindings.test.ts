@@ -1,6 +1,8 @@
 import { computed, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import type { AppBootstrap } from '@shared/contracts'
+import type { EditorWorkspaceViewState } from '../features/editor/workspaceViewSupport'
+import type { DocumentWordCount, EditorTab } from '../features/editor/types'
 import { useHomeViewBindings } from './useHomeViewBindings'
 
 const bootstrap: AppBootstrap = {
@@ -34,6 +36,8 @@ describe('useHomeViewBindings', () => {
     const search = {
       handleEditorChange: vi.fn(),
       handleHeadingSelect: vi.fn(),
+      openSearchPanel: vi.fn(async () => {}),
+      refreshActiveDocumentSearch: vi.fn(),
       searchActiveIndex: ref(1),
       searchQuery: ref('term'),
       searchTotal: ref(3),
@@ -41,32 +45,24 @@ describe('useHomeViewBindings', () => {
       updateSearch: vi.fn()
     }
 
-    const bindings = useHomeViewBindings({
-      actions,
-      activeDocument: ref({
-        id: 'tab-1',
-        pathname: 'D:/docs/example.md',
-        filename: 'example.md',
-        markdown: '# Example',
-        dirty: false,
-        kind: 'file',
-        savedMarkdown: '# Example',
-        headings: [],
-        lineCount: 1,
-        wordCount: { word: 1, paragraph: 1, character: 8, all: 8 },
-        cursor: { start: 1 },
-        history: { undo: [] },
-        toc: [{ content: 'Example', lvl: 1, slug: 'example' }]
-      }),
-      activeTabId: ref('tab-1'),
-      bootstrap: ref(bootstrap),
-      muyaEditor: ref(null),
-      recentDocuments: ref([{ filename: 'recent.md', pathname: 'D:/docs/recent.md' }]),
-      search,
-      showHome: computed(() => false),
-      sideBar: ref(null),
-      sideBarMode,
-      tabs: ref([{
+    const doc = ref<EditorTab>({
+      id: 'tab-1',
+      pathname: 'D:/docs/example.md',
+      filename: 'example.md',
+      markdown: '# Example',
+      dirty: false,
+      kind: 'file',
+      savedMarkdown: '# Example',
+      headings: [],
+      lineCount: 1,
+      wordCount: { word: 1, paragraph: 1, character: 8, all: 8 },
+      cursor: { start: 1 },
+      history: { undo: [] },
+      toc: [{ content: 'Example', lvl: 1, slug: 'example' }]
+    })
+
+    const tabs = ref<EditorTab[]>([
+      {
         id: 'tab-1',
         pathname: 'D:/docs/example.md',
         filename: 'example.md',
@@ -80,11 +76,38 @@ describe('useHomeViewBindings', () => {
         cursor: null,
         history: null,
         toc: []
-      }]),
-      titleDirty: ref(false),
-      titleFilename: ref('example.md'),
-      titlePathname: ref('D:/docs/example.md'),
-      titleWordCount: ref({ word: 1, paragraph: 1, character: 8, all: 8 })
+      }
+    ])
+
+    const wordCount: DocumentWordCount = {
+      word: 1,
+      paragraph: 1,
+      character: 8,
+      all: 8
+    }
+
+    const viewState: EditorWorkspaceViewState = {
+      activeDocument: computed<EditorTab | null>(() => doc.value),
+      activeTabId: ref('tab-1'),
+      bootstrap: ref(bootstrap),
+      headings: computed(() => []),
+      recentDocuments: ref([{ filename: 'recent.md', pathname: 'D:/docs/recent.md' }]),
+      showHome: computed(() => false),
+      sideBarMode,
+      tabs,
+      titleDirty: computed(() => false),
+      titleFilename: computed(() => 'example.md'),
+      titlePathname: computed(() => 'D:/docs/example.md'),
+      titleWordCount: computed(() => wordCount),
+      viewMode: ref('home')
+    }
+
+    const bindings = useHomeViewBindings({
+      actions,
+      muyaEditor: ref(null),
+      search,
+      sideBar: ref(null),
+      view: viewState
     })
 
     expect(bindings.sidebarProps.value.mode).toBe('files')

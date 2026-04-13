@@ -124,15 +124,15 @@ export const applyRangeSelectionSupport = Selection => {
 
     setFocus (focusNode, focusOffset) {
       if (!isSelectionNodeLike(focusNode)) {
-        return
+        return false
       }
 
       const selection = this.doc.getSelection()
       if (!selection) {
-        return
+        return false
       }
 
-      safeSetSelectionFocus(selection, focusNode, focusOffset, this.doc, range => this.selectRange(range))
+      return safeSetSelectionFocus(selection, focusNode, focusOffset, this.doc, range => this.selectRange(range))
     },
 
     clearSelection (moveCursorToStart) {

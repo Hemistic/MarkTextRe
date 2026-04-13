@@ -40,7 +40,7 @@ describe('window support', () => {
         preload: '/app/preload.cjs',
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: true,
+        sandbox: false,
         webSecurity: true,
         spellcheck: true
       }

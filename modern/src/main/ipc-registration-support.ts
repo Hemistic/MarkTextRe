@@ -1,4 +1,4 @@
-type RegisteredIpcHandler = (...args: any[]) => unknown
+export type RegisteredIpcHandler = (...args: any[]) => unknown
 
 type IpcHandleLike = (
   channel: string,

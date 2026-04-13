@@ -214,13 +214,22 @@ modern/
 - `renderer` 侧 workspace 命令绑定已继续拆分：
   - `workspaceBindings.ts` 已接管 bridge 命令注册和浏览器降级快捷键绑定
   - `useEditorWorkspace.ts` 不再手写 keydown / register / cleanup 分支
+  - `useEditorWorkspace.ts` 现在显式返回 `{ editor, viewState }`，页面层开始只消费聚合后的视图状态
 - `renderer/views` 侧 Home 编辑器绑定已继续拆分：
   - `homeEditorCommands.ts` 已接管 `Find / Undo / Redo` 的命令映射与执行
   - `homeEditorBindings.ts` 现在只保留快捷键/bridge 注册与 cleanup
+- `renderer/views` 侧 Home 页面装配已继续收口：
+  - `homeViewBindingFactory.ts` 已接管 title/sidebar/tabs/recent/editor 的 props/handlers 组装
+  - `useHomeViewBindings.ts` 已缩成纯 bindings 组合层，直接接收 `view/search/refs` 切片，不再额外依赖聚合 state 对象
+  - `useHomeViewService.ts` 已接管 HomeView 页面运行时装配，页面本身只保留组件消费
+  - `useHomeSearch.ts` 已显式导出 `HomeSearchState`，搜索绑定契约不再散落在 view helper 和测试里
 - `renderer/services` 已继续按协议职责拆开：
   - `appState.ts` 负责 bootstrap/session/dirty state
   - `appCommands.ts` 负责 close confirm、window close coordinator、app command 注册
   - 原混合的 `app.ts` 已删除
+- `shared` 协议边界已继续收紧：
+  - `contracts.ts` 已显式收口 `TocItem` 与 `WindowCloseCoordinator`
+  - renderer/main 不再各自内联窗口关闭协调协议
 - editor 命令层状态流转已统一：
   - 打开 / 重开 / 保存 / 关闭 tab 共用 `state.ts` 中的 workspace/status helper
   - recent document 追踪与 dirty tab close 决策已继续下沉到 `commandSupport.ts`
@@ -234,6 +243,12 @@ modern/
   - `services/appState.ts`
   - `services/files.ts`
   - `services/window.ts`
+  - `services/windowActionSupport.ts` 已拆出窗口 bridge 解析、缺失 action fallback 与浏览器关闭兜底
+- `renderer` 侧文件命令链已继续 adapter 化：
+  - `commandsRuntimeServices.ts` 已统一 bridge、关闭确认、文件打开/保存、recent remove 依赖
+  - `filesRuntimeServices.ts` 已接管文件打开/保存 bridge service 装配
+  - `commandsSupportRuntimeServices.ts` 已接管 recent remove 依赖
+  - `files.ts` 与 `commandsSupport.ts` 不再直接绑死具体 renderer service
 - 构建层已从兼容态 `manualChunks` 切到显式 `rolldown output.codeSplitting.groups`
 - Muya 内容态 chunk 已完成第二轮拆分，`contentState` 不再整坨黏在单个大块里：
   - `muya-content-core`
@@ -258,11 +273,22 @@ modern/
   - `src/muya/lib/contentState/tableDragDataSupport.js` 已继续缩成出口层，列交换 与 行交换 已拆到 `tableDragColumnSupport.js`、`tableDragRowSupport.js`
   - `src/muya/lib/contentState/tableDragStyleSupport.js` 已继续缩成编排层，拖拽 transform 样式应用 已拆到 `tableDragTransformSupport.js`
   - `src/muya/lib/contentState/tableSelectSupport.js` 已缩成薄转发层，table selection event、selection state、selection mutation 已拆到 `tableSelectionEventSupport.js`、`tableSelectionStateSupport.js`、`tableSelectionMutationSupport.js`
+  - `src/muya/lib/contentState/enterFinalizeSupport.js` 的代码块 enter 后 cursor 决策已拆到 `enterCodeBlockCursorSupport.js`
+  - `src/muya/lib/selection/cursorRangeSupport.js` 与 `rangeSelectionSupport.js` 的 selection restore 防御已拆到 `selectionRangeGuardSupport.js`
+  - `src/muya/lib/contentState/renderCursorRestoreSupport.js` 已统一 render 后 cursor restore 判定与 `restore / blur / skip` 动作决策
+  - `src/muya/lib/contentState/renderPipelineSupport.js` 不再直接散落恢复/失焦判断，而是通过 render cursor support 收口
+  - `src/muya/lib/contentState/renderCursorFocusSupport.js` 已拆出 editor focus 与延迟 cursor restore 的 DOM 调度逻辑，`renderCursorSupport.js` 继续向游标状态编排层收缩
+  - `src/muya/lib/contentState/cursorStateSupport.js` 已新增，输入/删除/剪切/语言编辑等入口开始统一检查 cursor edge 与 block 是否仍然有效
+  - `src/muya/lib/contentState/runtimeDomRootSupport.js` 已拆出 editor root 定位逻辑，`runtimeDomSupport.js` 继续保留 DOM 查询装配出口
+  - `src/muya/lib/contentState/renderPipelineSupport.js` 已继续收口 stale partial-render range，失效 renderRange 会回退到安全 full render，避免 Snabbdom 在断裂 DOM 上继续 diff
+  - `src/muya/lib/contentState/blockTreeQuerySupport.js` 的 activeBlocks 解析已支持显式 render block 回退，single render 不再强依赖 `contentState.cursor.start`
+  - `src/muya/lib/eventHandler/clickContextMenuSupport.js` 已开始尊重 `selection.setCursorRange()` 失败结果，避免右键菜单继续基于失效 cursor 派发 selection 状态
   - `src/muya/lib/contentState/arrowSupport.js` 已缩成薄转发层，table cell 跳转、选中图片/公式光标跳转、上下块导航 已拆到 `arrowTableSupport.js`、`arrowSelectionSupport.js`、`arrowMovementSupport.js`
   - `src/muya/lib/contentState/inputSupport.js` 已缩成薄转发层，token 对比、auto pair、quick insert reference 已拆到 `inputTokenSupport.js`、`inputAutoPairSupport.js`、`inputQuickInsertSupport.js`
   - `src/muya/lib/contentState/inputAutoPairSupport.js` 已继续缩成编排层，输入字符采集/配对规则与 delete/insert 分支 已拆到 `inputAutoPairRuleSupport.js`、`inputAutoPairMutationSupport.js`
   - `src/muya/lib/contentState/inputAutoPairMutationSupport.js` 已继续缩成出口层，delete 与 insert mutation 已拆到 `inputAutoPairDeleteSupport.js`、`inputAutoPairInsertSupport.js`
   - `src/muya/lib/contentState/inputEventSupport.js` 已继续缩成输入编排层，多段选区输入变更、quick insert 派发、代码块输入延迟渲染 与 普通输入渲染判定 已拆到 `inputSelectionMutationSupport.js`、`inputRenderSupport.js`
+  - `src/muya/lib/contentState/inputTrailingNewlineSupport.js` 已接管尾部换行插入的特判，`inputEventSupport.js` 继续向编排层收缩
   - `src/muya/lib/contentState/searchSupport.js` 已缩成薄转发层，regex 构造/替换占位展开 与 匹配遍历/高亮跳转 已拆到 `searchRegexSupport.js`、`searchMatchSupport.js`
   - `src/muya/lib/contentState/searchMatchSupport.js` 已继续缩成出口层，替换逻辑 与 高亮导航/全文遍历 已拆到 `searchReplaceSupport.js`、`searchNavigateSupport.js`
   - `src/muya/lib/contentState/dragDropSupport.js` 已缩成薄转发层，ghost 定位、拖拽图片接收、drag/drop 事件编排 已拆到 `dragDropGhostSupport.js`、`dragDropImageSupport.js`、`dragDropEventSupport.js`
@@ -286,6 +312,7 @@ modern/
   - `src/muya/lib/contentState/pasteClassifierSupport.js` 已抽出轻量 paste/copy 分类判断，避免为同步判断重新拉起整条 paste 重链
   - `src/muya/lib/contentState/clipboardSupport.js` 已缩成薄转发层，inline/图片源恢复、代码块归一化、剪贴板 DOM 清洗 已拆到 `clipboardInlineSupport.js`、`clipboardBlockSupport.js`、`clipboardCleanupSupport.js`
   - `src/muya/lib/contentState/clipboardData.js` 已缩成编排层，代码块选区提取 与 普通选区 HTML->Markdown 提取 已拆到 `clipboardSelectionSupport.js`
+  - `src/muya/lib/contentState/clipboardWrapperSupport.js` 已接管普通选区剪贴板 wrapper 的 DOM 创建与归一化，`clipboardSelectionSupport.js` 继续向数据流编排层收缩
   - `src/muya/lib/contentState/copyCutSupport.js` 已缩成薄转发层，selection cut、clipboard data、table/image/block copy 模式 已拆到 `copyCutSelectionSupport.js`、`copyCutClipboardSupport.js`、`copyCutCopySupport.js`
   - `src/muya/lib/contentState/copyCutCopySupport.js` 已继续缩成编排层，table copy 与 copyAsHtml/copyBlock/copyCodeContent 分支 已拆到 `copyCutTableSupport.js`、`copyCutModeSupport.js`
   - `src/muya/lib/contentState/enterSupport.js` 已缩成薄转发层，block 切分、list/task item 创建、table row/跨行跳转 已拆到 `enterBlockSupport.js`、`enterListSupport.js`、`enterTableSupport.js`
@@ -364,11 +391,17 @@ modern/
   - 搜索状态计算与查找步进已拆到 `search.ts`
   - 目录跳转 selector/scroll 计算已拆到 `navigation.ts`
   - 组件本身只保留实例生命周期、props 同步与事件桥接
+  - `bridgeHelpers.ts` 已拆出 legacy default export 解包与 plugin slot 兜底，`bridge.ts` 继续向纯边界层收口
+  - `sync.ts` 已拆出 `shouldEmitModelUpdateForChange()`，Muya -> model 的回写判定开始从同步主链里独立出来
 - `main` 侧 IPC 注册已开始按职责拆分：
   - `app-handlers.ts`
   - `file-handlers.ts`
   - `window-handlers.ts`
   - `dialogs.ts`
+- `main` 侧 IPC 装配已继续收口：
+  - `app/file/window` handler 现已改成显式 handler map 工厂
+  - `ipc.ts` 已成为统一的 `ipcMain.handle` 注册入口
+  - 各领域 handler 文件不再各自持有 `ipcMain` 注册副作用
 - 主进程已补回第一版原生应用菜单：
   - `main/menu.ts`
   - `File` 菜单可通过主进程原生命令分发触发 `New / Open / Save / Save As`
@@ -414,6 +447,10 @@ modern/
   - `navigation.test.ts`
   - `search.test.ts`
   - `sync.test.ts`
+- 当前结构改动的最小回归验证基线固定为：
+  - `npm --prefix modern run test`
+  - `npm run modern:build`
+  - 当前基线结果为 `65` 个测试文件、`217` 个测试通过
   - `chunks.test.ts`
   - 当前已覆盖 recent document、tab 切换、打开/保存/关闭命令流、dirty close 决策、窗口关闭状态机、窗口状态归一化/持久化辅助、session 恢复、IPC 序列化清洗、Muya bridge/sync 和 chunk 归组等无副作用逻辑
 - dev/build 已稳定可跑，`npm run modern:build` 当前可通过

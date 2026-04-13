@@ -46,7 +46,12 @@ export const resolveRenderIndices = (blocks, startKey, endKey) => {
   return [startIndex, endIndex]
 }
 
-export const prepareRenderContext = contentState => {
+export const canRenderRange = (blocks, startKey, endKey) => {
+  const hasBlock = key => !key || blocks.some(block => block.key === key)
+  return hasBlock(startKey) && hasBlock(endKey)
+}
+
+export const prepareRenderContext = (contentState, activeBlock = null) => {
   const stateRender = getRenderState(contentState)
   if (!stateRender) {
     return null
@@ -55,7 +60,7 @@ export const prepareRenderContext = contentState => {
   return {
     stateRender,
     blocks: contentState.blocks,
-    activeBlocks: contentState.getActiveBlocks(),
+    activeBlocks: contentState.getActiveBlocks(activeBlock),
     matches: markSearchMatches(contentState)
   }
 }

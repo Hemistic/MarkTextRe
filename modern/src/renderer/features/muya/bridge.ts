@@ -1,4 +1,8 @@
 import type { EditorChangePayload } from '../editor/types'
+import {
+  ensureMuyaPluginSlots,
+  unwrapMuyaConstructorExport
+} from './bridgeHelpers'
 
 export interface MuyaEditorOptions {
   markdown: string
@@ -40,14 +44,6 @@ interface CreateMuyaEditorOptions {
   onChange: (payload: EditorChangePayload) => void
 }
 
-const MUYA_PLUGIN_SLOTS = [
-  'quickInsert',
-  'codePicker',
-  'tablePicker',
-  'emojiPicker',
-  'imagePathPicker'
-] as const
-
 const DEFAULT_EDITOR_OPTIONS: Omit<MuyaEditorOptions, 'markdown'> = {
   focusMode: false,
   hideQuickInsertHint: true,
@@ -60,20 +56,7 @@ const DEFAULT_EDITOR_OPTIONS: Omit<MuyaEditorOptions, 'markdown'> = {
 let muyaConstructorPromise: Promise<MuyaEditorConstructor> | null = null
 
 export const resolveMuyaConstructor = (module: unknown): MuyaEditorConstructor => {
-  let candidate = module as { default?: unknown }
-
-  for (let i = 0; i < 3; i++) {
-    if (!candidate || typeof candidate !== 'object' || !('default' in candidate)) {
-      break
-    }
-
-    const next = candidate.default
-    if (!next || next === candidate) {
-      break
-    }
-
-    candidate = next as { default?: unknown }
-  }
+  const candidate = unwrapMuyaConstructorExport(module)
 
   if (typeof candidate !== 'function') {
     throw new Error('Legacy Muya constructor export is invalid.')
@@ -90,16 +73,7 @@ const loadMuyaEditorConstructor = async () => {
   return muyaConstructorPromise
 }
 
-export const ensureMuyaPluginSlots = (editor: MuyaEditorInstance) => {
-  for (const slot of MUYA_PLUGIN_SLOTS) {
-    if (!editor[slot]) {
-      editor[slot] = { destroy () {} }
-    }
-  }
-
-  return editor
-}
-
+export { ensureMuyaPluginSlots }
 export const syncMuyaEditorState = (
   editor: MuyaEditorInstance,
   markdown: string,

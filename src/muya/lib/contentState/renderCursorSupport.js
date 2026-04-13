@@ -1,6 +1,10 @@
 import selection from '../selection'
 import { getContentStateOptions } from './runtimeOptionSupport'
 import { shouldRestoreContentCursor } from './renderCursorRestoreSupport'
+import {
+  focusEditor,
+  scheduleCursorRestore
+} from './renderCursorFocusSupport'
 
 export const initContentState = contentState => {
   const lastBlock = contentState.getLastBlock()
@@ -32,8 +36,13 @@ export const setContentCursor = contentState => {
     return false
   }
 
-  selection.setCursorRange(contentState.cursor)
-  return true
+  focusEditor(getContentStateEditor(contentState))
+  const restored = selection.setCursorRange(contentState.cursor) !== false
+  if (!restored) {
+    scheduleCursorRestore(contentState)
+  }
+
+  return restored
 }
 
 export const setNextRenderRange = contentState => {

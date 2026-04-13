@@ -11,7 +11,8 @@ export const isConnectedSelectionNode = node => {
 }
 
 export const canRestoreCursorRange = (cursorRange, anchorParagraph, focusParagraph) => {
-  const { anchor, focus } = cursorRange || {}
+  const anchor = cursorRange && (cursorRange.anchor || cursorRange.start)
+  const focus = cursorRange && (cursorRange.focus || cursorRange.end)
 
   return !!(
     anchor &&
@@ -29,12 +30,12 @@ export const shouldClampSelectionOffset = node => {
 }
 
 export const clampSelectionOffset = (node, offset) => {
-  const textLength = typeof (node && node.textContent) === 'string'
-    ? node.textContent.length
-    : 0
+  const maxOffset = node && node.nodeType === 1
+    ? node.childNodes.length
+    : (typeof (node && node.textContent) === 'string' ? node.textContent.length : 0)
   const safeOffset = Number.isFinite(offset) ? offset : 0
 
-  return Math.max(0, Math.min(safeOffset, textLength))
+  return Math.max(0, Math.min(safeOffset, maxOffset))
 }
 
 export const normalizeSelectionTargets = (anchorNode, anchorOffset, focusNode, focusOffset) => {

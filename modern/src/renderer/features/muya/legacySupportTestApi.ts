@@ -10,6 +10,7 @@ export const {
 } = domQuerySupport as Record<string, any>
 
 export const {
+  canRenderRange,
   createEmptySearchMatches,
   getRenderState,
   prepareRenderContext,

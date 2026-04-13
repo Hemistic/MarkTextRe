@@ -2,6 +2,27 @@ import { describe, expect, it, vi } from 'vitest'
 import { createWindowActions } from './window'
 
 describe('window actions', () => {
+  it('resolves the bridge lazily so late preload exposure still works', async () => {
+    const runtimeWindow = ((globalThis as any).window ??= {})
+    const originalMarkText = runtimeWindow.marktext
+    const close = vi.fn(async () => {})
+    const actions = createWindowActions(undefined)
+
+    runtimeWindow.marktext = {
+      window: {
+        close,
+        maximize: vi.fn(async () => {}),
+        minimize: vi.fn(async () => {}),
+        toggleDevTools: vi.fn(async () => {})
+      }
+    } as any
+
+    await actions.closeWindow()
+    expect(close).toHaveBeenCalledOnce()
+
+    runtimeWindow.marktext = originalMarkText
+  })
+
   it('delegates to the provided window api', async () => {
     const windowApi = {
       minimize: vi.fn(async () => {}),
@@ -25,6 +46,10 @@ describe('window actions', () => {
 
   it('logs and no-ops when a bridge method is missing', async () => {
     const logError = vi.fn()
+    const close = vi.fn()
+    const runtimeWindow = ((globalThis as any).window ??= {})
+    const originalClose = runtimeWindow.close
+    runtimeWindow.close = close
     const actions = createWindowActions(null, logError)
 
     await actions.closeWindow()
@@ -32,5 +57,8 @@ describe('window actions', () => {
 
     expect(logError).toHaveBeenCalledWith('[modern] window close bridge is unavailable')
     expect(logError).toHaveBeenCalledWith('[modern] window toggle-dev-tools bridge is unavailable')
+    expect(close).toHaveBeenCalledOnce()
+
+    runtimeWindow.close = originalClose
   })
 })

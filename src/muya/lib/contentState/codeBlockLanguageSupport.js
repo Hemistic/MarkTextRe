@@ -1,16 +1,17 @@
 import selection from '../selection'
 import { ensureLanguageLoaded } from '../prism/runtimeSupport'
 import { queryContentState } from './runtimeDomSupport'
+import { resolveCursorRangeBlocks } from './cursorStateSupport'
 
 const EDITABLE_LANGUAGE_RE = /(^`{3,})([^`]+)/
 
 export const resolveEditLanguage = contentState => {
-  const { start } = selection.getCursorRange()
-  if (!start) {
+  const cursorContext = resolveCursorRangeBlocks(contentState, selection.getCursorRange())
+  if (!cursorContext) {
     return { lang: '', paragraph: null }
   }
 
-  const startBlock = contentState.getBlock(start.key)
+  const { start, startBlock } = cursorContext
   let lang = ''
   const { text } = startBlock
 

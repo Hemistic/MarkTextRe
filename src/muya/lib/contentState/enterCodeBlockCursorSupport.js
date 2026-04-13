@@ -3,17 +3,19 @@ export const resolveEnterCursorTarget = cursorBlock => {
     return null
   }
 
+  const children = Array.isArray(cursorBlock.children) ? cursorBlock.children : []
+
   if (cursorBlock.type === 'p') {
-    return cursorBlock.children[0] || cursorBlock
+    return children[0] || cursorBlock
   }
 
   if (cursorBlock.type === 'pre') {
-    const codeBlock = cursorBlock.children.find(child => child.type === 'code')
+    const codeBlock = children.find(child => child.type === 'code')
     if (codeBlock && codeBlock.children[0]) {
       return codeBlock.children[0]
     }
 
-    return cursorBlock.children[0] || cursorBlock
+    return children[0] || cursorBlock
   }
 
   return cursorBlock

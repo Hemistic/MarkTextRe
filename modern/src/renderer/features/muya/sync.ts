@@ -27,6 +27,14 @@ export const shouldSyncMuyaFromModel = (
   return Boolean(editor) && markdown !== state.lastMarkdown
 }
 
+export const shouldEmitModelUpdateForChange = (
+  state: MuyaSyncState,
+  markdown: string,
+  modelValue: string
+) => {
+  return !state.applyingExternalUpdate && markdown !== modelValue
+}
+
 export const restoreMuyaFromModel = (
   editor: MuyaEditorInstance,
   state: MuyaSyncState,
@@ -57,6 +65,6 @@ export const handleMuyaChange = (
 
   return {
     markdown,
-    shouldEmitModelUpdate: !state.applyingExternalUpdate && markdown !== modelValue
+    shouldEmitModelUpdate: shouldEmitModelUpdateForChange(state, markdown, modelValue)
   }
 }

@@ -1,5 +1,6 @@
 import selection from '../selection'
 import { isOsx } from '../config'
+import { resolveActiveCursorRange } from './cursorStateSupport'
 import {
   chopBlockByCursor,
   chopBlock,
@@ -56,11 +57,15 @@ const enterCtrl = ContentState => {
   }
 
   ContentState.prototype.enterHandler = function (event) {
-    const { start, end } = selection.getCursorRange()
-    if (!start || !end) {
+    const cursorContext = resolveActiveCursorRange(this, selection.getCursorRange())
+    if (!cursorContext) {
       return event.preventDefault()
     }
+    const { start, end } = cursorContext
     let block = this.getBlock(start.key)
+    if (!block) {
+      return
+    }
 
     event.preventDefault()
 

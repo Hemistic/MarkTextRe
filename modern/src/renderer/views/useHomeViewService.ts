@@ -6,22 +6,9 @@ import { startHomeEditorCommandBindings } from './homeEditorCommandBindings'
 import { createHomeViewActions } from './homeViewActions'
 import { useHomeViewBindings } from './useHomeViewBindings'
 
-export const useHomeViewModel = () => {
+export const useHomeViewService = () => {
   const workspace = useEditorWorkspace()
-  const {
-    editor,
-    bootstrap,
-    tabs,
-    activeTabId,
-    activeDocument,
-    recentDocuments,
-    sideBarMode,
-    titleFilename,
-    titlePathname,
-    titleDirty,
-    titleWordCount,
-    showHome
-  } = workspace
+  const { editor, viewState } = workspace
 
   const muyaEditor = ref<MuyaEditorExpose | null>(null)
   const sideBar = ref<SidebarExpose | null>(null)
@@ -30,7 +17,7 @@ export const useHomeViewModel = () => {
     applyEditorChange: editor.applyActiveEditorState,
     muyaEditor,
     sideBar,
-    sideBarMode
+    sideBarMode: viewState.sideBarMode
   })
 
   let unregisterEditorCommands = () => {}
@@ -54,26 +41,16 @@ export const useHomeViewModel = () => {
   })
 
   watch(
-    () => activeDocument.value?.id ?? null,
+    () => viewState.activeDocument.value?.id ?? null,
     search.refreshActiveDocumentSearch
   )
 
   const bindings = useHomeViewBindings({
     actions,
-    activeDocument,
-    activeTabId,
-    bootstrap,
     muyaEditor,
-    recentDocuments,
     search,
-    showHome,
     sideBar,
-    sideBarMode,
-    tabs,
-    titleDirty,
-    titleFilename,
-    titlePathname,
-    titleWordCount
+    view: viewState
   })
 
   return {

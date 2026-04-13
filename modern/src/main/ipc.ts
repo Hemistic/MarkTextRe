@@ -1,7 +1,15 @@
-import { registerAppIpcHandlers } from './app-handlers'
+import { ipcMain } from 'electron'
 import { registerCloseCoordinator } from './close-manager'
-import { registerFileIpcHandlers } from './file-handlers'
-import { registerWindowIpcHandlers } from './window-handlers'
+import { createAppIpcHandlers } from './app-handlers'
+import { createFileIpcHandlers } from './file-handlers'
+import { createWindowIpcHandlers } from './window-handlers'
+import { registerIpcHandleMap } from './ipc-registration-support'
+
+const handlerFactories = [
+  createAppIpcHandlers,
+  createFileIpcHandlers,
+  createWindowIpcHandlers
+]
 
 let ipcHandlersRegistered = false
 
@@ -12,7 +20,9 @@ export const registerIpcHandlers = () => {
 
   ipcHandlersRegistered = true
   registerCloseCoordinator()
-  registerAppIpcHandlers()
-  registerFileIpcHandlers()
-  registerWindowIpcHandlers()
+
+  const handle = ipcMain.handle.bind(ipcMain)
+  for (const factory of handlerFactories) {
+    registerIpcHandleMap(handle, factory())
+  }
 }

@@ -1,4 +1,5 @@
 import selection from '../selection'
+import { resolveActiveCursorRange } from './cursorStateSupport'
 import {
   checkBackspaceCase,
 } from './backspaceSupport'
@@ -30,19 +31,13 @@ const backspaceCtrl = ContentState => {
   }
 
   ContentState.prototype.backspaceHandler = function (event) {
-    const { start, end } = selection.getCursorRange()
-
-    if (!start || !end) {
+    const cursorContext = resolveActiveCursorRange(this, selection.getCursorRange())
+    if (!cursorContext) {
       return
     }
+    const { start, end, startBlock, endBlock } = cursorContext
 
     if (handleSelectionBackspace(this, event)) {
-      return
-    }
-
-    const startBlock = this.getBlock(start.key)
-    const endBlock = this.getBlock(end.key)
-    if (!startBlock || !endBlock) {
       return
     }
 
@@ -74,6 +69,13 @@ const backspaceCtrl = ContentState => {
 
     const context = getBackspaceContext(this)
     let { block, parent, preBlock, left, right, inlineDegrade } = context
+    if (!block) {
+      block = startBlock
+      parent = this.getParent(startBlock)
+      preBlock = this.findPreBlockInLocation(startBlock)
+      left = start.offset
+      right = typeof startBlock.text === 'string' ? startBlock.text.length - start.offset : 0
+    }
 
     if (handleInlineImageBackspace(this, event, context, startBlock, start)) {
       return

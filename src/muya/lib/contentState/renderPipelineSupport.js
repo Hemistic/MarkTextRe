@@ -8,20 +8,18 @@ import {
 } from './renderCursorSupport'
 import { blurContentState } from './runtimeMuyaSupport'
 import {
+  canRenderRange,
   prepareRenderContext,
   resolveRenderIndices
 } from './renderPipelineStateSupport'
-import { resolveRenderCursorAction } from './renderCursorRestoreSupport'
+import {
+  applyResolvedRenderCursorAction,
+  resolveRenderCursorAction
+} from './renderCursorRestoreSupport'
 
 const completeRender = (contentState, isRenderCursor) => {
   const action = resolveRenderCursorAction(contentState, isRenderCursor)
-
-  if (action === 'restore') {
-    setContentCursor(contentState)
-  } else if (action === 'blur') {
-    blurContentState(contentState)
-  }
-
+  applyResolvedRenderCursorAction(contentState, action, setContentCursor, blurContentState)
   postRender(contentState)
 }
 
@@ -51,10 +49,32 @@ export const partialRenderContentState = (contentState, isRenderCursor = true) =
     return
   }
 
-  const { stateRender, blocks, activeBlocks, matches } = context
-  const [startKey, endKey] = contentState.renderRange
+  const { stateRender, blocks, matches } = context
+  const [startKey, endKey] = Array.isArray(contentState.renderRange)
+    ? contentState.renderRange
+    : [null, null]
+
+  if (!canRenderRange(blocks, startKey, endKey)) {
+    setNextRenderRange(contentState)
+    stateRender.collectLabels(blocks)
+    stateRender.render(blocks, context.activeBlocks, matches)
+    completeRender(contentState, isRenderCursor)
+    return
+  }
+
   const [startIndex, endIndex] = resolveRenderIndices(blocks, startKey, endKey)
   const blocksToRender = blocks.slice(startIndex, endIndex)
+  const activeBlocks = context.activeBlocks.length
+    ? context.activeBlocks
+    : contentState.getActiveBlocks(blocksToRender[0] || null)
+
+  if (!blocksToRender.length) {
+    setNextRenderRange(contentState)
+    stateRender.collectLabels(blocks)
+    stateRender.render(blocks, activeBlocks, matches)
+    completeRender(contentState, isRenderCursor)
+    return
+  }
 
   setNextRenderRange(contentState)
   stateRender.collectLabels(blocks)
@@ -63,7 +83,7 @@ export const partialRenderContentState = (contentState, isRenderCursor = true) =
 }
 
 export const singleRenderContentState = (contentState, block, isRenderCursor = true) => {
-  const context = prepareRenderContext(contentState)
+  const context = prepareRenderContext(contentState, block)
   if (!context || !block) {
     return
   }
