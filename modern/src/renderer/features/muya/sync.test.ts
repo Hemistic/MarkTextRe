@@ -1,4 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+const { syncMuyaEditorState } = vi.hoisted(() => ({
+  syncMuyaEditorState: vi.fn()
+}))
+vi.mock('./bridge', () => ({
+  syncMuyaEditorState
+}))
 import {
   createMuyaSyncState,
   handleMuyaChange,
@@ -32,8 +38,11 @@ describe('muya sync', () => {
 
     expect(state.applyingExternalUpdate).toBe(true)
     expect(state.lastMarkdown).toBe('# New')
-    expect(setMarkdown).toHaveBeenCalledWith('# New', { start: 2 }, true)
-    expect(setHistory).toHaveBeenCalledWith({ undo: [] })
+    expect(syncMuyaEditorState).toHaveBeenCalledWith({
+      setMarkdown,
+      setHistory,
+      on: expect.any(Function)
+    }, '# New', { start: 2 }, { undo: [] })
 
     resetCallbacks[0]?.()
     expect(state.applyingExternalUpdate).toBe(false)

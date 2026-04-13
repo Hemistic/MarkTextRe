@@ -222,6 +222,7 @@ modern/
   - `homeViewBindingFactory.ts` 已接管 title/sidebar/tabs/recent/editor 的 props/handlers 组装
   - `useHomeViewBindings.ts` 已缩成纯 bindings 组合层，直接接收 `view/search/refs` 切片，不再额外依赖聚合 state 对象
   - `useHomeViewService.ts` 已接管 HomeView 页面运行时装配，页面本身只保留组件消费
+  - `homeViewRuntimeSupport.ts` 已接管 Home editor command executor 装配，`useHomeViewService.ts` 不再内联 undo/redo/search 执行细节
   - `useHomeSearch.ts` 已显式导出 `HomeSearchState`，搜索绑定契约不再散落在 view helper 和测试里
 - `renderer/services` 已继续按协议职责拆开：
   - `appState.ts` 负责 bootstrap/session/dirty state
@@ -235,6 +236,7 @@ modern/
   - recent document 追踪与 dirty tab close 决策已继续下沉到 `commandSupport.ts`
   - 不再在 `commands.ts` 里重复手写 tab / activeTabId / viewMode / recent / status 更新
   - `commandsWorkflowSupport.ts` 已接管 bridge 可用性守卫与 open/reopen/save/close workflow 编排，`commands.ts` 继续收缩为公开命令入口层
+  - `stateWorkflowSupport.ts` 已接管 focused/save/create/sample/open/close 等 workspace transition 应用编排，`state.ts` 继续收缩为 state API 门面
 - `renderer` 侧 store 壳已继续变薄：
   - `stores/editor.ts` 仅保留 Pinia 注册
   - `runtime.ts` 负责 editor 运行时状态装配与命令编排
@@ -449,10 +451,12 @@ modern/
   - `workspaceBindings.test.ts`
   - `homeEditorCommands.test.ts`
   - `homeEditorBindings.test.ts`
+  - `homeViewRuntimeSupport.test.ts`
   - `bridge.test.ts`
   - `editorLifecycle.test.ts`
   - `fileApi.test.ts`
   - `commandsWorkflowSupport.test.ts`
+  - `stateWorkflowSupport.test.ts`
   - `close-flow.test.ts`
   - `close-dialogs.test.ts`
   - `window-close-state.test.ts`
@@ -463,7 +467,7 @@ modern/
 - 当前结构改动的最小回归验证基线固定为：
   - `npm --prefix modern run test`
   - `npm run modern:build`
-  - 当前基线结果为 `71` 个测试文件、`232` 个测试通过
+  - 当前基线结果为 `73` 个测试文件、`236` 个测试通过
   - `chunks.test.ts`
   - 当前已覆盖 recent document、tab 切换、打开/保存/关闭命令流、dirty close 决策、窗口关闭状态机、窗口状态归一化/持久化辅助、session 恢复、IPC 序列化清洗、Muya bridge/sync 和 chunk 归组等无副作用逻辑
 - dev/build 已稳定可跑，`npm run modern:build` 当前可通过
@@ -501,7 +505,7 @@ modern/
   - 浏览器预览模式仍保留 `keydown` 回退，不依赖 Electron 菜单
   - 最近文件菜单会在打开/保存/移除最近文件后由主进程自动刷新
 - 自动化验证不再完全为零：
-  - `npm --prefix modern run test` 当前可通过，基线已提升到 `71/232`
+  - `npm --prefix modern run test` 当前可通过，基线已提升到 `73/236`
   - 但仍只覆盖 editor 域纯函数，尚未进入 Electron 启动/关闭/文件流集成回归
 - 主进程残余编排已继续收口：
   - `close-manager.ts` 已从窗口关闭决策中剥离出 `close-flow.ts`
@@ -611,7 +615,7 @@ modern/
   - 覆盖 workspace、editor commands、session serialization 等不依赖 Electron 窗口的路径
 - 通过标准：
   - 测试必须全绿
-  - 当前基线应保持 `71/232` 通过
+  - 当前基线应保持 `73/236` 通过
 
 ### 构建验证
 

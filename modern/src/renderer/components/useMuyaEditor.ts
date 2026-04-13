@@ -1,4 +1,5 @@
 import { onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
+import path from 'path'
 import type { EditorChangePayload } from '../features/editor/types'
 import { createMuyaEditor, getMuyaErrorMessage } from '../features/muya/bridge'
 import type { MuyaEditorInstance } from '../features/muya/types'
@@ -11,6 +12,7 @@ import {
 
 type MuyaEditorProps = {
   modelValue: string
+  pathname?: string | null
   cursor?: unknown
   history?: unknown
 }
@@ -29,6 +31,10 @@ export const useMuyaEditor = (
   let editor: MuyaEditorInstance | null = null
   const syncState = createMuyaSyncState(props.modelValue)
 
+  const syncRuntimeDirname = (pathnameValue?: string | null) => {
+    globalThis.DIRNAME = pathnameValue ? path.dirname(pathnameValue) : ''
+  }
+
   const restoreEditorState = (markdown: string, cursor?: unknown, history?: unknown) => {
     if (!editor) return
 
@@ -37,6 +43,8 @@ export const useMuyaEditor = (
 
   onMounted(async () => {
     if (!host.value) return
+
+    syncRuntimeDirname(props.pathname)
 
     try {
       editor = await createMuyaEditor({
@@ -59,6 +67,14 @@ export const useMuyaEditor = (
   })
 
   watch(
+    () => props.pathname,
+    pathnameValue => {
+      syncRuntimeDirname(pathnameValue)
+    },
+    { immediate: true }
+  )
+
+  watch(
     () => props.modelValue,
     markdown => {
       if (!shouldSyncMuyaFromModel(editor, markdown, syncState)) return
@@ -70,6 +86,7 @@ export const useMuyaEditor = (
   onBeforeUnmount(() => {
     editor?.destroy?.()
     editor = null
+    globalThis.DIRNAME = ''
   })
 
   return {

@@ -27,6 +27,7 @@ describe('useHomeViewBindings', () => {
       minimizeWindow: vi.fn(async () => {}),
       openDocument: vi.fn(async () => {}),
       openRecentDocument: vi.fn(async (_pathname: string) => {}),
+      openSettings: vi.fn(),
       openSampleDocument: vi.fn(),
       saveDocument: vi.fn(async () => {}),
       saveDocumentAs: vi.fn(async () => {}),

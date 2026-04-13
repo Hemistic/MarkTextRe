@@ -13,6 +13,10 @@ import {
   resolveRenderIndices
 } from './renderPipelineStateSupport'
 import {
+  captureRenderScrollAnchor,
+  restoreRenderScrollAnchor
+} from './renderScrollAnchorSupport'
+import {
   applyResolvedRenderCursorAction,
   resolveRenderCursorAction
 } from './renderCursorRestoreSupport'
@@ -34,12 +38,14 @@ export const renderContentState = (contentState, isRenderCursor = true, clearCac
   }
 
   const { stateRender, blocks, activeBlocks, matches } = context
+  const scrollAnchor = captureRenderScrollAnchor(contentState)
   if (clearCache) {
     clearContentStateTokenCache(contentState)
   }
   setNextRenderRange(contentState)
   stateRender.collectLabels(blocks)
   stateRender.render(blocks, activeBlocks, matches)
+  restoreRenderScrollAnchor(contentState, scrollAnchor)
   completeRender(contentState, isRenderCursor)
 }
 
@@ -50,6 +56,7 @@ export const partialRenderContentState = (contentState, isRenderCursor = true) =
   }
 
   const { stateRender, blocks, matches } = context
+  const scrollAnchor = captureRenderScrollAnchor(contentState)
   const [startKey, endKey] = Array.isArray(contentState.renderRange)
     ? contentState.renderRange
     : [null, null]
@@ -58,6 +65,7 @@ export const partialRenderContentState = (contentState, isRenderCursor = true) =
     setNextRenderRange(contentState)
     stateRender.collectLabels(blocks)
     stateRender.render(blocks, context.activeBlocks, matches)
+    restoreRenderScrollAnchor(contentState, scrollAnchor)
     completeRender(contentState, isRenderCursor)
     return
   }
@@ -72,6 +80,7 @@ export const partialRenderContentState = (contentState, isRenderCursor = true) =
     setNextRenderRange(contentState)
     stateRender.collectLabels(blocks)
     stateRender.render(blocks, activeBlocks, matches)
+    restoreRenderScrollAnchor(contentState, scrollAnchor)
     completeRender(contentState, isRenderCursor)
     return
   }
@@ -79,6 +88,7 @@ export const partialRenderContentState = (contentState, isRenderCursor = true) =
   setNextRenderRange(contentState)
   stateRender.collectLabels(blocks)
   stateRender.partialRender(blocksToRender, activeBlocks, matches, startKey, endKey)
+  restoreRenderScrollAnchor(contentState, scrollAnchor)
   completeRender(contentState, isRenderCursor)
 }
 
@@ -89,9 +99,11 @@ export const singleRenderContentState = (contentState, block, isRenderCursor = t
   }
 
   const { stateRender, blocks, activeBlocks, matches } = context
+  const scrollAnchor = captureRenderScrollAnchor(contentState)
   setNextRenderRange(contentState)
   stateRender.collectLabels(blocks)
   stateRender.singleRender(block, activeBlocks, matches)
+  restoreRenderScrollAnchor(contentState, scrollAnchor)
   completeRender(contentState, isRenderCursor)
 }
 

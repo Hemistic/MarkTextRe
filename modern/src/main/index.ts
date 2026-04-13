@@ -1,10 +1,15 @@
 import { app, BrowserWindow } from 'electron'
 import { registerIpcHandlers } from './ipc'
 import { installApplicationMenu } from './menu'
+import {
+  installLocalFileProtocol,
+  registerLocalFileProtocolScheme
+} from './local-file-protocol'
 import { createOpenPathCoordinator } from './open-paths'
 import { createMainWindow } from './window'
 
 let mainWindow: BrowserWindow | null = null
+registerLocalFileProtocolScheme()
 const openPathCoordinator = createOpenPathCoordinator({
   createWindow: createMainWindow,
   getWindow: () => mainWindow,
@@ -29,6 +34,7 @@ if (!hasSingleInstanceLock) {
 openPathCoordinator.registerAppEventHandlers()
 
 app.whenReady().then(async () => {
+  installLocalFileProtocol()
   await openPathCoordinator.captureStartupPaths(process.argv)
   await bootstrap()
 

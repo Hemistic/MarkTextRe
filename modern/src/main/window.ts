@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BrowserWindow } from 'electron'
 import { installWindowCloseHandler } from './close-manager'
-import { attachWindowDevDiagnostics } from './webcontents'
+import { attachWindowContextMenu, attachWindowDevDiagnostics } from './webcontents'
 import {
   createMainWindowOptions,
   getRendererLoadTarget,
@@ -40,6 +40,7 @@ export const createMainWindow = async () => {
 
   installWindowCloseHandler(window)
   installWindowStatePersistence(window)
+  attachWindowContextMenu(window)
 
   if (isDev) {
     attachWindowDevDiagnostics(window)

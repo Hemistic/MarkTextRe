@@ -29,4 +29,7 @@ export interface CreateMuyaEditorOptions {
   onChange: (payload: EditorChangePayload) => void
 }
 
-export type MuyaEditorConstructor = new (host: HTMLElement, options: MuyaEditorOptions) => MuyaEditorInstance
+export interface MuyaEditorConstructor {
+  new (host: HTMLElement, options: MuyaEditorOptions): MuyaEditorInstance
+  use: (plugin: unknown, options?: Record<string, unknown>) => void
+}

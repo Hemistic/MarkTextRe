@@ -51,15 +51,45 @@ export const scrollMuyaContainerToTarget = (
   })
 }
 
+export const scrollMuyaToHeadingWithinRoots = (
+  queryRoot: Pick<HTMLElement, 'querySelector'> | null | undefined,
+  scrollContainer: Pick<HTMLElement, 'scrollTo' | 'scrollTop' | 'getBoundingClientRect'> | null | undefined,
+  slug: string
+) => {
+  if (!slug || !queryRoot || !scrollContainer) {
+    return false
+  }
+
+  const target = findMuyaHeadingTarget(queryRoot, slug)
+  if (!target) {
+    return false
+  }
+
+  scrollMuyaContainerToTarget(scrollContainer, target)
+  return true
+}
+
 export const scrollMuyaToHeading = (
   container: Pick<HTMLElement, 'querySelector' | 'scrollTo' | 'scrollTop' | 'getBoundingClientRect'> | null | undefined,
   slug: string
 ) => {
-  if (!slug || !container) {
+  if (!container) {
     return false
   }
 
-  const target = findMuyaHeadingTarget(container, slug)
+  const queryRoot = typeof container.querySelector === 'function'
+    ? (container.querySelector<HTMLElement>('#ag-editor-id') ?? container)
+    : container
+
+  if (!queryRoot) {
+    return false
+  }
+
+  if (!slug) {
+    return false
+  }
+
+  const target = findMuyaHeadingTarget(queryRoot, slug)
   if (!target) {
     return false
   }

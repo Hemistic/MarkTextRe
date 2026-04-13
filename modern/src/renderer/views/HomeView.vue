@@ -8,7 +8,7 @@ import { useHomeViewService } from './useHomeViewService'
 
 const AsyncMuyaEditor = defineAsyncComponent(() => import('../components/MuyaEditor.vue'))
 
-const { bindings } = useHomeViewService()
+const { bindings, isSettingsOpen, closeSettings } = useHomeViewService()
 const {
   editorHandlers,
   editorProps,
@@ -42,6 +42,7 @@ const {
       @open-recent="sidebarHandlers.openRecent"
       @open-file="sidebarHandlers.openFile"
       @new-file="sidebarHandlers.newFile"
+      @open-settings="sidebarHandlers.openSettings"
       @select-heading="sidebarHandlers.selectHeading"
       @update:search-query="sidebarHandlers.updateSearchQuery"
       @search-next="sidebarHandlers.searchNext"
@@ -100,6 +101,17 @@ const {
         </div>
       </div>
     </div>
+
+    <div v-if="isSettingsOpen" class="settings-overlay" @click.self="closeSettings">
+      <section class="settings-panel">
+        <header class="settings-header">
+          <h2>Settings</h2>
+          <button type="button" class="settings-close" @click="closeSettings">Close</button>
+        </header>
+        <p class="settings-copy">Settings UI is not fully migrated yet.</p>
+        <p class="settings-copy">The button is now wired, and this panel is the placeholder entry for the upcoming modern settings surface.</p>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -143,5 +155,51 @@ const {
   height: 100%;
   min-height: 0;
   width: 100%;
+}
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.settings-panel {
+  width: min(360px, 92vw);
+  height: 100%;
+  padding: 20px 18px;
+  box-sizing: border-box;
+  background: var(--editorBgColor);
+  border-left: 1px solid var(--editorColor10);
+  box-shadow: -12px 0 32px rgba(15, 23, 42, 0.16);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--editorColor80);
+}
+
+.settings-close {
+  border: 1px solid var(--editorColor10);
+  border-radius: 6px;
+  padding: 6px 10px;
+  background: var(--itemBgColor);
+  color: var(--editorColor80);
+}
+
+.settings-copy {
+  margin: 0 0 10px;
+  line-height: 1.6;
+  color: var(--editorColor60);
 }
 </style>

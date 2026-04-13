@@ -31,6 +31,7 @@ describe('fileApi helper', () => {
     removeRecentDocument: async () => undefined,
     openMarkdown: async () => null,
     openMarkdownAtPath: async () => null,
+    pickImage: async () => null,
     saveMarkdown: async () => null,
     saveMarkdownAs: async () => null
   }

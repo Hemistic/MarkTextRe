@@ -115,6 +115,7 @@ export interface MarkTextFilesApi {
   removeRecentDocument: (pathname: string) => Promise<void>
   openMarkdown: () => Promise<EditorDocument | null>
   openMarkdownAtPath: (pathname: string) => Promise<EditorDocument | null>
+  pickImage: () => Promise<string | null>
   saveMarkdown: (input: SaveDocumentInput) => Promise<SaveDocumentResult | null>
   saveMarkdownAs: (input: SaveDocumentInput) => Promise<SaveDocumentResult | null>
 }

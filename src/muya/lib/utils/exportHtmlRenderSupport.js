@@ -59,7 +59,11 @@ export const renderMermaid = async exportHtml => {
     securityLevel: 'strict',
     theme: 'default'
   })
-  mermaid.init(undefined, exportHtml.exportContainer.querySelectorAll('div.mermaid'))
+  const containers = exportHtml.exportContainer.querySelectorAll('div.mermaid')
+  for (const container of containers) {
+    await mermaid.parse(container.textContent || '')
+  }
+  await Promise.resolve(mermaid.init(undefined, containers))
   if (exportHtml.muya) {
     mermaid.initialize({
       securityLevel: 'strict',

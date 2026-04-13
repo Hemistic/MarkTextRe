@@ -2,6 +2,88 @@ import path from 'path'
 import { URL_REG, DATA_URL_REG, IMAGE_EXT_REG } from '../config'
 
 const TIMEOUT = 1500
+const ABSOLUTE_LOCAL_REG = /^(?:\/|\\\\|[a-zA-Z]:\\|[a-zA-Z]:\/).+/
+const WINDOWS_LOCAL_REG = /^(?:[a-zA-Z]:\\|[a-zA-Z]:\/).+/
+const WINDOWS_UNC_REG = /^\\\\\?\\.+/
+const FILE_PROTOCOL_REG = /^file:\/\/.+/
+const HTTP_PROTOCOL_REG = /^https?:$/
+const ELECTRON_USER_AGENT_REG = /Electron/i
+
+const toFileProtocolSrc = src => {
+  if (!src || DATA_URL_REG.test(src) || URL_REG.test(src) || FILE_PROTOCOL_REG.test(src)) {
+    return src
+  }
+
+  if (WINDOWS_LOCAL_REG.test(src)) {
+    return 'file:///' + src.replace(/\\/g, '/')
+  }
+
+  if (WINDOWS_UNC_REG.test(src)) {
+    return 'file:///' + src.substring(4).replace(/\\/g, '/')
+  }
+
+  if (/^\/.+/.test(src)) {
+    return 'file://' + src
+  }
+
+  return src
+}
+
+const fromFileProtocolSrc = src => {
+  if (!FILE_PROTOCOL_REG.test(src)) {
+    return src
+  }
+
+  if (/^file:\/\/\/[a-zA-Z]:\//.test(src)) {
+    return decodeURIComponent(src.replace(/^file:\/\/\//, ''))
+  }
+
+  return decodeURIComponent(src.replace(/^file:\/\//, ''))
+}
+
+const isDevHttpRenderer = () => {
+  return typeof window !== 'undefined' &&
+    window.location &&
+    HTTP_PROTOCOL_REG.test(window.location.protocol)
+}
+
+const isElectronRenderer = () => {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  if (window.marktext) {
+    return true
+  }
+
+  return typeof navigator !== 'undefined' &&
+    ELECTRON_USER_AGENT_REG.test(navigator.userAgent || '')
+}
+
+const toBrowserAccessibleSrc = src => {
+  const fileProtocolSrc = toFileProtocolSrc(src)
+
+  if (isElectronRenderer()) {
+    return fileProtocolSrc.replace(/^file:/, 'marktext-file:')
+  }
+
+  if (!isDevHttpRenderer()) {
+    return fileProtocolSrc
+  }
+
+  const absolutePath = fromFileProtocolSrc(fileProtocolSrc)
+
+  if (!ABSOLUTE_LOCAL_REG.test(absolutePath)) {
+    return fileProtocolSrc
+  }
+
+  const normalizedPath = absolutePath.replace(/\\/g, '/')
+  const fsPath = normalizedPath.startsWith('/')
+    ? normalizedPath
+    : `/${normalizedPath}`
+
+  return encodeURI(`/@fs${fsPath}`)
+}
 
 export const loadImage = async (url, detectContentType = false) => {
   if (detectContentType) {
@@ -98,21 +180,48 @@ export const checkImageContentType = url => {
 }
 
 export const getImageInfo = (src, baseUrl) => {
+  if (typeof src !== 'string' || !src) {
+    return {
+      isUnknownType: false,
+      src: ''
+    }
+  }
+
+  if (DATA_URL_REG.test(src)) {
+    return {
+      isUnknownType: false,
+      src
+    }
+  }
+
   const runtimeDirname = typeof globalThis !== 'undefined'
     ? globalThis.DIRNAME
     : undefined
   const resolvedBaseUrl = baseUrl ?? runtimeDirname
   const imageExtension = IMAGE_EXT_REG.test(src)
-  const isUrl = URL_REG.test(src) || (imageExtension && /^file:\/\/.+/.test(src))
+  const isUrl = URL_REG.test(src) || (imageExtension && FILE_PROTOCOL_REG.test(src))
 
   if (imageExtension) {
-    const isAbsoluteLocal = /^(?:\/|\\\\|[a-zA-Z]:\\|[a-zA-Z]:\/).+/.test(src)
+    const isAbsoluteLocal = ABSOLUTE_LOCAL_REG.test(src)
 
-    if (isUrl || (!isAbsoluteLocal && !resolvedBaseUrl)) {
-      if (!isUrl && !resolvedBaseUrl) {
-        console.warn('"baseUrl" is not defined!')
+    if (isUrl) {
+      return {
+        isUnknownType: false,
+        src: FILE_PROTOCOL_REG.test(src)
+          ? toBrowserAccessibleSrc(src)
+          : src
       }
+    }
 
+    if (isAbsoluteLocal) {
+      return {
+        isUnknownType: false,
+        src: toBrowserAccessibleSrc(src)
+      }
+    }
+
+    if (!resolvedBaseUrl) {
+      console.warn('"baseUrl" is not defined!')
       return {
         isUnknownType: false,
         src
@@ -121,18 +230,11 @@ export const getImageInfo = (src, baseUrl) => {
 
     return {
       isUnknownType: false,
-      src: 'file://' + path.resolve(resolvedBaseUrl, src)
+      src: toBrowserAccessibleSrc(path.resolve(resolvedBaseUrl, src))
     }
   } else if (isUrl && !imageExtension) {
     return {
       isUnknownType: true,
-      src
-    }
-  }
-
-  if (DATA_URL_REG.test(src)) {
-    return {
-      isUnknownType: false,
       src
     }
   }

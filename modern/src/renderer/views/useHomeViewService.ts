@@ -5,6 +5,7 @@ import { useHomeSearch } from './useHomeSearch'
 import { startHomeEditorCommandBindings } from './homeEditorCommandBindings'
 import { createHomeViewActions } from './homeViewActions'
 import { useHomeViewBindings } from './useHomeViewBindings'
+import { createHomeEditorCommandExecutor } from './homeViewRuntimeSupport'
 
 export const useHomeViewService = () => {
   const workspace = useEditorWorkspace()
@@ -12,7 +13,12 @@ export const useHomeViewService = () => {
 
   const muyaEditor = ref<MuyaEditorExpose | null>(null)
   const sideBar = ref<SidebarExpose | null>(null)
-  const actions = createHomeViewActions(editor)
+  const isSettingsOpen = ref(false)
+  const actions = createHomeViewActions(editor, undefined, {
+    openSettingsPanel: () => {
+      isSettingsOpen.value = true
+    }
+  })
   const search = useHomeSearch({
     applyEditorChange: editor.applyActiveEditorState,
     muyaEditor,
@@ -24,15 +30,7 @@ export const useHomeViewService = () => {
 
   onMounted(() => {
     unregisterEditorCommands = startHomeEditorCommandBindings({
-      executor: {
-        openSearchPanel: search.openSearchPanel,
-        undo: () => {
-          muyaEditor.value?.undo()
-        },
-        redo: () => {
-          muyaEditor.value?.redo()
-        }
-      }
+      executor: createHomeEditorCommandExecutor(search, muyaEditor)
     })
   })
 
@@ -54,6 +52,10 @@ export const useHomeViewService = () => {
   })
 
   return {
-    bindings
+    bindings,
+    closeSettings: () => {
+      isSettingsOpen.value = false
+    },
+    isSettingsOpen
   }
 }

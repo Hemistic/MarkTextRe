@@ -8,7 +8,10 @@ declare module '*.vue' {
 }
 
 declare global {
+  var DIRNAME: string
+
   interface Window {
+    DIRNAME: string
     marktext: MarkTextApi
   }
 }

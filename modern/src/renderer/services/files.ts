@@ -22,6 +22,10 @@ export const openMarkdownAtPath = async (pathname: string): Promise<EditorDocume
   return invokeFilesAction((files) => files.openMarkdownAtPath(pathname), null)
 }
 
+export const pickImagePath = async (): Promise<string | null> => {
+  return invokeFilesAction((files) => files.pickImage(), null)
+}
+
 export const saveMarkdown = async (input: SaveDocumentInput) => {
   return invokeFilesAction((files) => files.saveMarkdown(input), null)
 }

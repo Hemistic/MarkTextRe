@@ -7,6 +7,7 @@ import {
   createMuyaEditorInstance,
   waitForMuyaEditorReady
 } from './editorLifecycle'
+import { registerMuyaPlugins } from './pluginRegistry'
 import type { CreateMuyaEditorOptions, MuyaEditorConstructor, MuyaEditorInstance } from './types'
 
 export type { CreateMuyaEditorOptions, MuyaEditorConstructor, MuyaEditorInstance } from './types'
@@ -57,6 +58,7 @@ export const createMuyaEditor = async ({
   onChange
 }: CreateMuyaEditorOptions) => {
   const Muya = await loadMuyaEditorConstructor()
+  registerMuyaPlugins(Muya)
   const editor = await waitForMuyaEditorReady(createMuyaEditorInstance(Muya, host, markdown))
 
   syncMuyaEditorState(editor, markdown, cursor, history)

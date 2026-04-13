@@ -17,7 +17,8 @@ export const createEditorBindings = ({
     cursor: view.activeDocument.value?.cursor,
     documentId: view.activeDocument.value?.id ?? '',
     history: view.activeDocument.value?.history,
-    modelValue: view.activeDocument.value?.markdown ?? ''
+    modelValue: view.activeDocument.value?.markdown ?? '',
+    pathname: view.activeDocument.value?.pathname ?? null
   }))
 
   const handlers = {
@@ -54,6 +55,7 @@ export const createSidebarBindings = ({
     newFile: actions.createDocument,
     openFile: actions.openDocument,
     openRecent: actions.openRecentDocument,
+    openSettings: actions.openSettings,
     searchNext: () => search.stepSearch('next'),
     searchPrev: () => search.stepSearch('prev'),
     selectHeading: search.handleHeadingSelect,

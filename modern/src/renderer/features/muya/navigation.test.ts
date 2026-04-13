@@ -3,6 +3,7 @@ import {
   findMuyaHeadingTarget,
   getMuyaScrollTopForTarget,
   scrollMuyaContainerToTarget,
+  scrollMuyaToHeadingWithinRoots,
   scrollMuyaToHeading
 } from './navigation'
 
@@ -64,5 +65,31 @@ describe('muya navigation helpers', () => {
       scrollTo: vi.fn(),
       getBoundingClientRect: () => ({ top: 0 })
     } as unknown as HTMLElement, 'intro')).toBe(false)
+  })
+
+  it('supports separate query and scroll roots for Muya heading navigation', () => {
+    const target = {
+      getBoundingClientRect: () => ({ top: 240 })
+    }
+    const queryRoot = {
+      querySelector: vi.fn(() => target)
+    }
+    const scrollTo = vi.fn()
+    const scrollContainer = {
+      scrollTop: 10,
+      scrollTo,
+      getBoundingClientRect: () => ({ top: 20 })
+    }
+
+    expect(scrollMuyaToHeadingWithinRoots(
+      queryRoot as unknown as HTMLElement,
+      scrollContainer as unknown as HTMLElement,
+      'intro'
+    )).toBe(true)
+    expect(queryRoot.querySelector).toHaveBeenCalledWith('#intro')
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 150,
+      behavior: 'smooth'
+    })
   })
 })

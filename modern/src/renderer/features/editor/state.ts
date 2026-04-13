@@ -5,23 +5,24 @@ import type { RestoredEditorState } from './session'
 import {
   type ClosedTabResult,
   type PreparedDocumentResult,
-  addRecentDocumentEntry,
-  openPreparedDocumentInWorkspace,
-  replaceActiveDocument as replaceActiveDocumentInWorkspace
+  addRecentDocumentEntry
 } from './workspace'
 import {
-  resolveCreatedTabTransition,
-  resolveFocusedTabTransition,
-  resolveSampleDocumentTransition,
-  resolveSavedTabTransition
-} from './stateSupport'
+  closePreparedTabInWorkspaceState,
+  createTabInWorkspaceState,
+  focusTabInState,
+  openPreparedDocumentInWorkspaceState,
+  openSampleDocumentInWorkspaceState,
+  replaceActiveDocumentInWorkspaceState,
+  replaceSavedTabInWorkspaceState,
+  syncWorkspaceViewModeFromState
+} from './stateWorkflowSupport'
+import { syncWorkspaceViewMode } from './stateMutationSupport'
 import {
   applyRestoredEditorStateRefs,
   applyStatusText,
   applyWorkspaceStateRefs,
-  applyWorkspaceStatusTransition,
   replaceTabCollectionInState,
-  syncWorkspaceViewMode,
   type EditorStateRefs,
   type StatusStateRef,
   type WorkspaceStateRefs
@@ -59,7 +60,7 @@ export const syncWorkspaceViewModeInState = (
   activeTabId: Ref<string | null>,
   viewMode: Ref<EditorViewMode>
 ) => {
-  syncWorkspaceViewMode(tabs, activeTabId, viewMode)
+  syncWorkspaceViewModeFromState(tabs, activeTabId, viewMode, syncWorkspaceViewMode)
 }
 
 export const setStatusInState = (status: Ref<string>, text: string) => {
@@ -82,12 +83,7 @@ export const setFocusedTabInState = (
   status: Ref<string>,
   id: string
 ) => {
-  const nextState = resolveFocusedTabTransition(tabs.value, id)
-  if (!nextState) {
-    return
-  }
-
-  applyWorkspaceStatusTransition({ tabs, activeTabId, viewMode, status }, nextState)
+  focusTabInState({ tabs, activeTabId, viewMode, status }, id)
 }
 
 export const replaceActiveDocumentInState = (
@@ -97,8 +93,7 @@ export const replaceActiveDocumentInState = (
   viewMode: Ref<EditorViewMode>,
   document: EditorTab
 ) => {
-  const nextState = replaceActiveDocumentInWorkspace(tabs.value, activeDocument.value, document)
-  applyWorkspaceState({ tabs, activeTabId, viewMode }, nextState)
+  replaceActiveDocumentInWorkspaceState({ tabs, activeDocument, activeTabId, viewMode }, document)
 }
 
 export const openPreparedDocumentInState = (
@@ -110,13 +105,11 @@ export const openPreparedDocumentInState = (
   document: EditorTab,
   statusText: string
 ) => {
-  const nextState = openPreparedDocumentInWorkspace(
-    tabs.value,
-    activeDocument.value,
+  openPreparedDocumentInWorkspaceState(
+    { tabs, activeDocument, activeTabId, viewMode, status },
     document,
     statusText
   )
-  applyWorkspaceStatusTransition({ tabs, activeTabId, viewMode, status }, nextState)
 }
 
 export const replaceSavedTabInState = (
@@ -126,18 +119,14 @@ export const replaceSavedTabInState = (
   currentId: string,
   nextTab: EditorTab
 ) => {
-  applyWorkspaceState(
-    { tabs, activeTabId, viewMode },
-    resolveSavedTabTransition(tabs.value, activeTabId.value, currentId, nextTab)
-  )
+  replaceSavedTabInWorkspaceState({ tabs, activeTabId, viewMode }, currentId, nextTab)
 }
 
 export const closePreparedTabInState = (
   state: WorkspaceStateRefs & StatusStateRef,
   nextState: ClosedTabResult
 ) => {
-  applyWorkspaceStateRefs(state, nextState)
-  applyStatusText(state.status, `Closed ${nextState.closedTab.filename}`)
+  closePreparedTabInWorkspaceState(state, nextState)
 }
 
 export const createTabInState = (
@@ -148,14 +137,14 @@ export const createTabInState = (
   untitledSequence: Ref<number>,
   status: Ref<string>
 ) => {
-  const nextState = resolveCreatedTabTransition(
-    tabs.value,
-    activeDocument.value,
-    untitledSequence.value
-  )
-  untitledSequence.value += 1
-
-  applyWorkspaceStatusTransition({ tabs, activeTabId, viewMode, status }, nextState)
+  createTabInWorkspaceState({
+    tabs,
+    activeDocument,
+    activeTabId,
+    viewMode,
+    untitledSequence,
+    status
+  })
 }
 
 export const openSampleDocumentInState = (
@@ -165,10 +154,11 @@ export const openSampleDocumentInState = (
   viewMode: Ref<EditorViewMode>,
   status: Ref<string>
 ) => {
-  const nextState = resolveSampleDocumentTransition(
-    tabs.value,
-    activeDocument.value
-  )
-
-  applyWorkspaceStatusTransition({ tabs, activeTabId, viewMode, status }, nextState)
+  openSampleDocumentInWorkspaceState({
+    tabs,
+    activeDocument,
+    activeTabId,
+    viewMode,
+    status
+  })
 }

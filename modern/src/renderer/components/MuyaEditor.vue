@@ -5,7 +5,7 @@ import 'legacy-muya/themes/prismjs/light.theme.css'
 import '../styles/muya-code-theme.css'
 import type { EditorChangePayload } from '../features/editor/types'
 import {
-  scrollMuyaToHeading
+  scrollMuyaToHeadingWithinRoots
 } from '../features/muya/navigation'
 import {
   searchMuyaDocument,
@@ -16,6 +16,7 @@ import { useMuyaEditor } from './useMuyaEditor'
 const props = defineProps<{
   documentId: string
   modelValue: string
+  pathname?: string | null
   cursor?: unknown
   history?: unknown
 }>()
@@ -48,7 +49,9 @@ const redo = () => {
 }
 
 const scrollToHeading = (slug: string) => {
-  scrollMuyaToHeading(editorRef()?.container, slug)
+  const container = editorRef()?.container ?? null
+  const queryRoot = container?.querySelector?.('#ag-editor-id') ?? container
+  scrollMuyaToHeadingWithinRoots(queryRoot, container, slug)
 }
 
 defineExpose({

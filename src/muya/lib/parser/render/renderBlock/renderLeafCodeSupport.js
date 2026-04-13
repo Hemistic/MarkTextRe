@@ -76,7 +76,7 @@ const requestCodeHighlightRender = (stateRender, lang, block) => {
     })
 }
 
-export const renderCodeContentBlock = (stateRender, selector, block, highlights, isEditing = false) => {
+export const renderCodeContentBlock = (stateRender, selector, block, highlights, _isEditing = false) => {
   const code = getHighlightHtml(block.text, highlights, true, true)
     .replace(new RegExp(MARKER_HASK['<'], 'g'), '<')
     .replace(new RegExp(MARKER_HASK['>'], 'g'), '>')
@@ -90,7 +90,7 @@ export const renderCodeContentBlock = (stateRender, selector, block, highlights,
   let nextSelector = selector
   let innerHTML = code
 
-  if (prismModule && transformedLang && /\S/.test(code) && prismModule.loadedLanguages.has(transformedLang) && !isEditing) {
+  if (prismModule && transformedLang && /\S/.test(code) && prismModule.loadedLanguages.has(transformedLang)) {
     const wrapper = document.createElement('div')
     wrapper.classList.add(`language-${transformedLang}`)
     wrapper.innerHTML = code

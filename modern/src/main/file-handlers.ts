@@ -11,6 +11,7 @@ import {
   removeRecentDocument
 } from './recent-documents'
 import {
+  showOpenImageDialog,
   showOpenMarkdownDialog,
   showSaveMarkdownDialog
 } from './dialogs'
@@ -36,6 +37,9 @@ export const createFileIpcHandlers = () => ({
     const document = await tryOpenMarkdownDocument(pathname)
     await refreshApplicationMenu()
     return document
+  },
+  [MAIN_IPC_CHANNELS.files.pickImage]: async () => {
+    return showOpenImageDialog()
   },
   [MAIN_IPC_CHANNELS.files.saveMarkdown]: async (_event: IpcMainInvokeEvent, input: SaveDocumentInput) => {
     let pathname = input.pathname

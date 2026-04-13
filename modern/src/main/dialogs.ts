@@ -6,6 +6,10 @@ const MARKDOWN_FILE_FILTERS = [
   { name: 'Markdown', extensions: ['md', 'markdown', 'mdown', 'mkd', 'txt'] }
 ]
 
+const IMAGE_FILE_FILTERS = [
+  { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp'] }
+]
+
 export const showSaveMarkdownDialog = async (filename: string) => {
   const result = await dialog.showSaveDialog({
     title: 'Save Markdown File',
@@ -26,6 +30,20 @@ export const showOpenMarkdownDialog = async () => {
   const result = await dialog.showOpenDialog({
     title: 'Open Markdown File',
     filters: MARKDOWN_FILE_FILTERS,
+    properties: ['openFile']
+  })
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return null
+  }
+
+  return result.filePaths[0]
+}
+
+export const showOpenImageDialog = async () => {
+  const result = await dialog.showOpenDialog({
+    title: 'Select Image',
+    filters: IMAGE_FILE_FILTERS,
     properties: ['openFile']
   })
 

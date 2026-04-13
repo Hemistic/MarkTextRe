@@ -26,6 +26,7 @@ const emit = defineEmits<{
   'open-recent': [pathname: string]
   'open-file': []
   'new-file': []
+  'open-settings': []
   'select-heading': [slug: string]
   'update:search-query': [value: string]
   'search-next': []
@@ -89,7 +90,7 @@ defineExpose({
         </li>
       </ul>
       <ul class="bottom">
-        <li>
+        <li @click="emit('open-settings')">
           <img :src="settingIcon" alt="Settings" />
         </li>
       </ul>

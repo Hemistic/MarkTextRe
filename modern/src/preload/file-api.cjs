@@ -6,6 +6,7 @@ const createFilesApi = ({ channels, invoke }) => {
     removeRecentDocument: pathname => invoke(files.removeRecentDocument, pathname),
     openMarkdown: () => invoke(files.openMarkdown),
     openMarkdownAtPath: pathname => invoke(files.openMarkdownAtPath, pathname),
+    pickImage: () => invoke(files.pickImage),
     saveMarkdown: input => invoke(files.saveMarkdown, input),
     saveMarkdownAs: input => invoke(files.saveMarkdownAs, input)
   }

@@ -14,6 +14,10 @@ interface HomeViewEditorStore {
   setActiveTab: (id: string) => void
 }
 
+interface HomeViewActionHooks {
+  openSettingsPanel?: () => void
+}
+
 export interface HomeViewActions {
   closeTab: (id: string) => void
   closeWindow: () => Promise<void>
@@ -22,6 +26,7 @@ export interface HomeViewActions {
   minimizeWindow: () => Promise<void>
   openDocument: () => Promise<void>
   openRecentDocument: (pathname: string) => Promise<void>
+  openSettings: () => void
   openSampleDocument: () => void
   saveDocument: () => Promise<void>
   saveDocumentAs: () => Promise<void>
@@ -31,7 +36,8 @@ export interface HomeViewActions {
 
 export const createHomeViewActions = (
   editor: HomeViewEditorStore,
-  windowActions: WindowActions = createWindowActions()
+  windowActions: WindowActions = createWindowActions(),
+  hooks: HomeViewActionHooks = {}
 ): HomeViewActions => ({
   closeTab: id => editor.closeTab(id),
   closeWindow: () => windowActions.closeWindow(),
@@ -40,6 +46,9 @@ export const createHomeViewActions = (
   minimizeWindow: () => windowActions.minimizeWindow(),
   openDocument: () => editor.openDocument(),
   openRecentDocument: pathname => editor.reopenRecentDocument(pathname),
+  openSettings: () => {
+    hooks.openSettingsPanel?.()
+  },
   openSampleDocument: () => editor.openSampleDocument(),
   saveDocument: () => editor.saveActiveDocument(),
   saveDocumentAs: () => editor.saveActiveDocumentAs(),

@@ -16,11 +16,13 @@ describe('marktext preload api', () => {
 
     await api.app.getBootstrap()
     await api.files.openMarkdownAtPath('D:/docs/example.md')
+    await api.files.pickImage()
     await api.window.toggleDevTools()
 
     expect(ipcRenderer.invoke).toHaveBeenNthCalledWith(1, IPC_CHANNELS.app.getBootstrap)
     expect(ipcRenderer.invoke).toHaveBeenNthCalledWith(2, IPC_CHANNELS.files.openMarkdownAtPath, 'D:/docs/example.md')
-    expect(ipcRenderer.invoke).toHaveBeenNthCalledWith(3, IPC_CHANNELS.window.toggleDevTools)
+    expect(ipcRenderer.invoke).toHaveBeenNthCalledWith(3, IPC_CHANNELS.files.pickImage)
+    expect(ipcRenderer.invoke).toHaveBeenNthCalledWith(4, IPC_CHANNELS.window.toggleDevTools)
     expect(Object.isFrozen(api)).toBe(true)
     expect(Object.isFrozen(api.app)).toBe(true)
   })
