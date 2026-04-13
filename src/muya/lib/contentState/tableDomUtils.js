@@ -1,16 +1,24 @@
-export const getTableElement = tableId => document.querySelector(`#${tableId}`)
+import { queryContentState } from './runtimeDomSupport'
 
-export const calculateAspects = (tableId, barType) => {
-  const table = getTableElement(tableId)
+export const getTableElement = (contentState, tableId) => queryContentState(contentState, `#${tableId}`)
+
+export const calculateAspects = (contentState, tableId, barType) => {
+  const table = getTableElement(contentState, tableId)
+  if (!table) {
+    return []
+  }
   if (barType === 'bottom') {
     const firstRow = table.querySelector('tr')
-    return Array.from(firstRow.children).map(cell => cell.clientWidth)
+    return firstRow ? Array.from(firstRow.children).map(cell => cell.clientWidth) : []
   }
   return Array.from(table.querySelectorAll('tr')).map(row => row.clientHeight)
 }
 
-export const getAllTableCells = tableId => {
-  const table = getTableElement(tableId)
+export const getAllTableCells = (contentState, tableId) => {
+  const table = getTableElement(contentState, tableId)
+  if (!table) {
+    return []
+  }
   const rows = table.querySelectorAll('tr')
   const cells = []
   for (const row of Array.from(rows)) {
@@ -36,8 +44,11 @@ export const getIndex = (barType, cell) => {
   return Array.from(rowContainer.children).indexOf(row) + 1
 }
 
-export const getDragCells = (tableId, barType, index) => {
-  const table = getTableElement(tableId)
+export const getDragCells = (contentState, tableId, barType, index) => {
+  const table = getTableElement(contentState, tableId)
+  if (!table) {
+    return []
+  }
   const dragCells = []
   if (barType === 'left') {
     if (index === 0) {

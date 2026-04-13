@@ -1,6 +1,7 @@
 import BaseScrollFloat from '../baseScrollFloat'
-import Emoji from '../emojis'
 import { patch, h } from '../../parser/render/snabbdom'
+import { createEmojiSearch } from '../emojis/runtimeSupport'
+import { getMuyaContentState, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 import './index.css'
 
 class EmojiPicker extends BaseScrollFloat {
@@ -13,8 +14,24 @@ class EmojiPicker extends BaseScrollFloat {
     this.renderArray = null
     this.activeItem = null
     this.oldVnode = null
-    this.emoji = new Emoji()
+    this.emoji = null
+    this.emojiPromise = null
     this.listen()
+  }
+
+  ensureEmoji () {
+    if (this.emoji) {
+      return Promise.resolve(this.emoji)
+    }
+
+    if (!this.emojiPromise) {
+      this.emojiPromise = createEmojiSearch().then(emoji => {
+        this.emoji = emoji
+        return emoji
+      })
+    }
+
+    return this.emojiPromise
   }
 
   get renderObj () {
@@ -37,22 +54,30 @@ class EmojiPicker extends BaseScrollFloat {
 
   listen () {
     super.listen()
-    const { eventCenter } = this.muya
-    eventCenter.subscribe('muya-emoji-picker', ({ reference, emojiNode }) => {
+    const eventCenter = getMuyaEventCenter(this.muya)
+    eventCenter && eventCenter.subscribe('muya-emoji-picker', ({ reference, emojiNode }) => {
       if (!emojiNode) return this.hide()
       const text = emojiNode.textContent.trim()
       if (text) {
-        const renderObj = this.emoji.search(text)
-        this.renderObj = renderObj
-        const cb = item => {
-          this.muya.contentState.setEmoji(item)
-        }
-        if (this.renderArray.length) {
-          this.show(reference, cb)
-          this.render()
-        } else {
-          this.hide()
-        }
+        this.ensureEmoji()
+          .then(emoji => {
+            const renderObj = emoji.search(text)
+            this.renderObj = renderObj
+            const cb = item => {
+              const contentState = getMuyaContentState(this.muya)
+              contentState.setEmoji(item)
+            }
+            if (this.renderArray.length) {
+              this.show(reference, cb)
+              this.render()
+            } else {
+              this.hide()
+            }
+          })
+          .catch(err => {
+            console.warn(err)
+            this.hide()
+          })
       }
     })
   }
@@ -94,7 +119,9 @@ class EmojiPicker extends BaseScrollFloat {
 
   destroy () {
     super.destroy()
-    this.emoji.destroy()
+    if (this.emoji) {
+      this.emoji.destroy()
+    }
   }
 }
 

@@ -1,6 +1,8 @@
 /* eslint-disable no-useless-escape */
 const FOOTNOTE_REG = /^\[\^([^\^\[\]\s]+?)(?<!\\)\]: /
 /* eslint-enable no-useless-escape */
+import { queryContentState } from './runtimeDomSupport'
+
 const footnoteCtrl = ContentState => {
   ContentState.prototype.updateFootnote = function (block, line) {
     const { start, end } = this.cursor
@@ -53,7 +55,7 @@ const footnoteCtrl = ContentState => {
     }
     const sectionWrapper = this.updateFootnote(newBlock, newBlock.children[0])
     const id = sectionWrapper.key
-    const footnoteEle = document.querySelector(`#${id}`)
+    const footnoteEle = queryContentState(this, `#${id}`)
     if (footnoteEle) {
       footnoteEle.scrollIntoView({ behavior: 'smooth' })
     }

@@ -1,4 +1,11 @@
 import './index.css'
+import {
+  dispatchMuyaRuntimeEvent,
+  getMuyaContainer,
+  getMuyaContentState,
+  getMuyaDocument,
+  getMuyaEventCenter
+} from '../../muyaRuntimeAccessSupport'
 
 const CIRCLES = [
   'top-left',
@@ -22,14 +29,20 @@ class Transformer {
     this.eventId = []
     this.lastScrollTop = null
     this.resizing = false
-    const container = this.container = document.createElement('div')
+    const doc = this.getOwnerDocument()
+    const container = this.container = doc.createElement('div')
     container.classList.add('ag-transformer')
-    document.body.appendChild(container)
+    doc.body.appendChild(container)
     this.listen()
   }
 
   listen () {
-    const { eventCenter, container } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const container = getMuyaContainer(this.muya)
+    const doc = this.getOwnerDocument()
+    if (!eventCenter || !container || !doc || !doc.body) {
+      return
+    }
     const scrollHandler = event => {
       if (typeof this.lastScrollTop !== 'number') {
         this.lastScrollTop = event.target.scrollTop
@@ -40,7 +53,7 @@ class Transformer {
         this.hide()
       }
     }
-    eventCenter.attachDOMEvent(document, 'click', this.hide.bind(this))
+    eventCenter.attachDOMEvent(doc, 'click', this.hide.bind(this))
     eventCenter.subscribe('muya-transformer', ({ reference, imageInfo }) => {
       this.reference = reference
       if (reference) {
@@ -55,11 +68,10 @@ class Transformer {
 
     eventCenter.attachDOMEvent(container, 'scroll', scrollHandler)
     eventCenter.attachDOMEvent(this.container, 'dragstart', event => event.preventDefault())
-    eventCenter.attachDOMEvent(document.body, 'mousedown', this.mouseDown)
+    eventCenter.attachDOMEvent(doc.body, 'mousedown', this.mouseDown)
   }
 
   render () {
-    const { eventCenter } = this.muya
     if (this.status) {
       this.hide()
     }
@@ -67,12 +79,13 @@ class Transformer {
 
     this.createElements()
     this.update()
-    eventCenter.dispatch('muya-float', this, true)
+    dispatchMuyaRuntimeEvent(this.muya, 'muya-float', this, true)
   }
 
   createElements () {
+    const doc = this.getOwnerDocument()
     CIRCLES.forEach(c => {
-      const circle = document.createElement('div')
+      const circle = doc.createElement('div')
       circle.classList.add('circle')
       circle.classList.add(c)
       circle.setAttribute('data-position', c)
@@ -109,13 +122,17 @@ class Transformer {
   mouseDown = (event) => {
     const target = event.target
     if (!target.closest('.circle')) return
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const doc = this.getOwnerDocument()
+    if (!eventCenter || !doc || !doc.body) {
+      return
+    }
     this.movingAnchor = target.getAttribute('data-position')
-    const mouseMoveId = eventCenter.attachDOMEvent(document.body, 'mousemove', this.mouseMove)
-    const mouseUpId = eventCenter.attachDOMEvent(document.body, 'mouseup', this.mouseUp)
+    const mouseMoveId = eventCenter.attachDOMEvent(doc.body, 'mousemove', this.mouseMove)
+    const mouseUpId = eventCenter.attachDOMEvent(doc.body, 'mouseup', this.mouseUp)
     this.resizing = true
     // Hide image toolbar
-    eventCenter.dispatch('muya-image-toolbar', { reference: null })
+    dispatchMuyaRuntimeEvent(this.muya, 'muya-image-toolbar', { reference: null })
     this.eventId.push(mouseMoveId, mouseUpId)
   }
 
@@ -147,7 +164,7 @@ class Transformer {
   }
 
   mouseUp = (event) => {
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
     if (this.eventId.length) {
       for (const id of this.eventId) {
         eventCenter.detachDOMEvent(id)
@@ -156,7 +173,8 @@ class Transformer {
     }
     // todo update data
     if (typeof this.width === 'number') {
-      this.muya.contentState.updateImage(this.imageInfo, 'width', this.width)
+      const contentState = getMuyaContentState(this.muya)
+      contentState.updateImage(this.imageInfo, 'width', this.width)
       this.width = null
       this.hide()
     }
@@ -165,11 +183,19 @@ class Transformer {
   }
 
   hide () {
-    const { eventCenter } = this.muya
     const circles = this.container.querySelectorAll('.circle')
     Array.from(circles).forEach(c => c.remove())
     this.status = false
-    eventCenter.dispatch('muya-float', this, false)
+    dispatchMuyaRuntimeEvent(this.muya, 'muya-float', this, false)
+  }
+
+  destroy () {
+    this.hide()
+    this.container.remove()
+  }
+
+  getOwnerDocument () {
+    return getMuyaDocument(this.muya)
   }
 }
 

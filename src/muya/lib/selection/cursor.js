@@ -1,4 +1,5 @@
 import { compareParagraphsOrder } from './dom'
+import { querySelectionRoot } from './root'
 
 class Cursor {
   // You need to provide either `anchor`&&`focus` or `start`&&`end` or all.
@@ -20,8 +21,8 @@ class Cursor {
           this.end = this.anchor
         }
       } else {
-        const anchorParagraph = document.querySelector(`#${anchor.key}`)
-        const focusParagraph = document.querySelector(`#${focus.key}`)
+        const anchorParagraph = querySelectionRoot(`#${anchor.key}`)
+        const focusParagraph = querySelectionRoot(`#${focus.key}`)
         let order = true
         if (anchorParagraph && focusParagraph) {
           order = compareParagraphsOrder(anchorParagraph, focusParagraph)

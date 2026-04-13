@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, toRef } from 'vue'
 import type { AppBootstrap } from '@shared/contracts'
 import type { DocumentWordCount } from '../features/editor/types'
-import { closeWindow, maximizeWindow, minimizeWindow } from '../services/window'
+import { TITLE_BAR_LABEL_MAP, useLegacyTitleBar } from './useLegacyTitleBar'
 
 const props = defineProps<{
   bootstrap: AppBootstrap | null
@@ -19,33 +19,16 @@ const emit = defineEmits<{
   'open-file': []
   'save-file': []
   'save-file-as': []
+  'toggle-devtools': []
+  'minimize-window': []
+  'maximize-window': []
+  'close-window': []
 }>()
 
-const order = ['word', 'paragraph', 'character', 'all'] as const
-const labelMap = {
-  word: { short: 'W', full: 'word' },
-  paragraph: { short: 'P', full: 'paragraph' },
-  character: { short: 'C', full: 'character' },
-  all: { short: 'A', full: 'character (all)' }
-}
-
-const currentMetric = ref<(typeof order)[number]>('word')
-
-const pathSegments = computed(() => {
-  if (!props.pathname) return []
-  return props.pathname
-    .split(/[\\/]+/)
-    .filter(Boolean)
-    .slice(0, -1)
-    .slice(-3)
-})
-
-const platform = computed(() => props.bootstrap?.platform ?? 'win32')
-
-const cycleMetric = () => {
-  const index = order.indexOf(currentMetric.value)
-  currentMetric.value = order[(index + 1) % order.length]
-}
+const { currentMetric, cycleMetric, pathSegments, platform } = useLegacyTitleBar(
+  toRef(props, 'pathname'),
+  computed(() => props.bootstrap?.platform)
+)
 </script>
 
 <template>
@@ -69,15 +52,16 @@ const cycleMetric = () => {
         <button class="toolbar-button" type="button" @click="emit('open-file')">Open</button>
         <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file')">Save</button>
         <button class="toolbar-button" type="button" :disabled="!hasDocument" @click="emit('save-file-as')">Save As</button>
+        <button class="toolbar-button" type="button" @click="emit('toggle-devtools')">DevTools</button>
         <button v-if="hasDocument" class="word-count" type="button" @click="cycleMetric">
-          {{ `${labelMap[currentMetric].short} ${wordCount[currentMetric]}` }}
+          {{ `${TITLE_BAR_LABEL_MAP[currentMetric].short} ${wordCount[currentMetric]}` }}
         </button>
       </div>
 
       <div v-if="platform !== 'darwin'" class="window-controls title-no-drag">
-        <button class="window-button" type="button" @click="minimizeWindow">_</button>
-        <button class="window-button" type="button" @click="maximizeWindow">□</button>
-        <button class="window-button close" type="button" @click="closeWindow">×</button>
+        <button class="window-button" type="button" @click="emit('minimize-window')">_</button>
+        <button class="window-button" type="button" @click="emit('maximize-window')">□</button>
+        <button class="window-button close" type="button" @click="emit('close-window')">×</button>
       </div>
     </div>
   </div>
@@ -109,7 +93,7 @@ const cycleMetric = () => {
 }
 
 .title {
-  padding: 0 380px 0 142px;
+  padding: 0 460px 0 142px;
   height: 100%;
   line-height: var(--titleBarHeight);
   font-size: 14px;
@@ -153,7 +137,7 @@ const cycleMetric = () => {
   position: absolute;
   top: 0;
   right: 138px;
-  width: 340px;
+  width: 420px;
   display: flex;
   align-items: center;
   justify-content: flex-end;

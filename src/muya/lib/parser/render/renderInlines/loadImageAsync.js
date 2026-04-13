@@ -1,6 +1,7 @@
 import { getUniqueId, loadImage } from '../../../utils'
 import { insertAfter, operateClassName } from '../../../utils/domManipulate'
 import { CLASS_OR_ID } from '../../../config'
+import { queryStateRenderEditor } from '../../../contentState/runtimeDomSupport'
 
 export default function loadImageAsync (imageInfo, attrs, className, imageClass) {
   const { src, isUnknownType } = imageInfo
@@ -24,7 +25,7 @@ export default function loadImageAsync (imageInfo, attrs, className, imageClass)
     id = getUniqueId()
     loadImage(src, isUnknownType)
       .then(({ url, width, height }) => {
-        const imageText = document.querySelector(`#${id}`)
+        const imageText = queryStateRenderEditor(this, `#${id}`)
         const img = document.createElement('img')
         let dispMsec = Date.now()
         let touchMsec = dispMsec
@@ -75,7 +76,7 @@ export default function loadImageAsync (imageInfo, attrs, className, imageClass)
         })
       })
       .catch(() => {
-        const imageText = document.querySelector(`#${id}`)
+        const imageText = queryStateRenderEditor(this, `#${id}`)
         if (imageText) {
           operateClassName(imageText, 'remove', CLASS_OR_ID.AG_IMAGE_LOADING)
           operateClassName(imageText, 'add', CLASS_OR_ID.AG_IMAGE_FAIL)

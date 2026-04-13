@@ -2,11 +2,9 @@ import type { SaveDocumentResult } from '@shared/contracts'
 import type { EditorTab } from './types'
 import { normalizeOpenedDocument } from './document'
 import {
-  openMarkdown,
-  openMarkdownAtPath,
-  saveMarkdown,
-  saveMarkdownAs
-} from '../../services/files'
+  createEditorFilesRuntimeServices,
+  type EditorFilesRuntimeServices
+} from './filesRuntimeServices'
 
 export const OPEN_UNAVAILABLE_STATUS = 'Open is unavailable outside the Electron shell.'
 export const REOPEN_UNAVAILABLE_STATUS = 'Reopen is unavailable outside the Electron shell.'
@@ -32,24 +30,33 @@ export const getDirtyTabIds = (tabs: EditorTab[]) => {
     .map(tab => tab.id)
 }
 
-export const openDocumentFromPicker = async () => {
-  const openedDocument = await openMarkdown()
+export const openDocumentFromPicker = async (
+  runtimeServices: EditorFilesRuntimeServices = createEditorFilesRuntimeServices()
+) => {
+  const openedDocument = await runtimeServices.openMarkdown()
   return openedDocument ? normalizeOpenedDocument(openedDocument) : null
 }
 
-export const reopenDocumentFromPath = async (pathname: string) => {
-  const openedDocument = await openMarkdownAtPath(pathname)
+export const reopenDocumentFromPath = async (
+  pathname: string,
+  runtimeServices: EditorFilesRuntimeServices = createEditorFilesRuntimeServices()
+) => {
+  const openedDocument = await runtimeServices.openMarkdownAtPath(pathname)
   return openedDocument ? normalizeOpenedDocument(openedDocument) : null
 }
 
-export const saveTabDocument = async (current: EditorTab, saveAs = false) => {
+export const saveTabDocument = async (
+  current: EditorTab,
+  saveAs = false,
+  runtimeServices: EditorFilesRuntimeServices = createEditorFilesRuntimeServices()
+) => {
   const result = saveAs
-    ? await saveMarkdownAs({
+    ? await runtimeServices.saveMarkdownAs({
       pathname: current.pathname,
       filename: current.filename,
       markdown: current.markdown
     })
-    : await saveMarkdown({
+    : await runtimeServices.saveMarkdown({
       pathname: current.pathname,
       filename: current.filename,
       markdown: current.markdown

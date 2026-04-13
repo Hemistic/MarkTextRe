@@ -42,6 +42,10 @@ const backspaceCtrl = ContentState => {
 
     const startBlock = this.getBlock(start.key)
     const endBlock = this.getBlock(end.key)
+    if (!startBlock || !endBlock) {
+      return
+    }
+
     const startOutmostBlock = this.findOutMostBlock(startBlock)
     const endOutmostBlock = this.findOutMostBlock(endBlock)
     if (handleAtxHeadingBackspace(this, event, start, end, startBlock)) {

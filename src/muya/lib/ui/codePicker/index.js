@@ -1,7 +1,8 @@
 import BaseScrollFloat from '../baseScrollFloat'
 import { patch, h } from '../../parser/render/snabbdom'
-import { search } from '../../prism/index'
+import { searchLanguages } from '../../prism/runtimeSupport'
 import fileIcons from '../fileIcons'
+import { getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -25,22 +26,39 @@ class CodePicker extends BaseScrollFloat {
     this.renderArray = []
     this.oldVnode = null
     this.activeItem = null
+    this.searchRequestId = 0
     this.listen()
   }
 
   listen () {
     super.listen()
-    const { eventCenter } = this.muya
-    eventCenter.subscribe('muya-code-picker', ({ reference, lang, cb }) => {
-      const modes = search(lang)
-      if (modes.length && reference) {
-        this.show(reference, cb)
-        this.renderArray = modes
-        this.activeItem = modes[0]
-        this.render()
-      } else {
+    const eventCenter = getMuyaEventCenter(this.muya)
+    eventCenter && eventCenter.subscribe('muya-code-picker', ({ reference, lang, cb }) => {
+      if (!reference) {
         this.hide()
+        return
       }
+
+      const requestId = ++this.searchRequestId
+      searchLanguages(lang)
+        .then(modes => {
+          if (requestId !== this.searchRequestId) return
+
+          if (modes.length) {
+            this.show(reference, cb)
+            this.renderArray = modes
+            this.activeItem = modes[0]
+            this.render()
+          } else {
+            this.hide()
+          }
+        })
+        .catch(err => {
+          console.warn(err)
+          if (requestId === this.searchRequestId) {
+            this.hide()
+          }
+        })
     })
   }
 

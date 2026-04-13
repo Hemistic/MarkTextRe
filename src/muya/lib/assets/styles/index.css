@@ -430,6 +430,13 @@ figure {
   transition: all .25s ease-in-out;
 }
 
+/* Modern shell currently hides legacy preview edit affordances to avoid duplicate controls. */
+.ag-container-icon {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .ag-container-icon i.icon,
 .ag-front-icon i.icon,
 .ag-tool-bar ul li i.icon {
@@ -1216,11 +1223,14 @@ pre:not(.ag-active):hover .ag-code-copy {
 }
 
 .ag-code-copy i.icon {
+  display: inline-block;
   position: absolute;
   top: 2px;
   left: 2px;
   width: 16px;
   height: 16px;
+  overflow: hidden;
+  color: var(--iconColor);
 }
 
 .ag-code-copy i.icon > i[class^=icon-] {

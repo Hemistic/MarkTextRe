@@ -1,6 +1,7 @@
 import BaseFloat from '../baseFloat'
 import { patch, h } from '../../parser/render/snabbdom'
 import icons from './config'
+import { getMuyaContentState, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -25,16 +26,16 @@ class FormatPicker extends BaseFloat {
     this.formats = null
     this.options = opts
     this.icons = icons
-    const formatContainer = this.formatContainer = document.createElement('div')
+    const formatContainer = this.formatContainer = this.getOwnerDocument().createElement('div')
     this.container.appendChild(formatContainer)
     this.floatBox.classList.add('ag-format-picker-container')
     this.listen()
   }
 
   listen () {
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
     super.listen()
-    eventCenter.subscribe('muya-format-picker', ({ reference, formats }) => {
+    eventCenter && eventCenter.subscribe('muya-format-picker', ({ reference, formats }) => {
       if (reference) {
         this.formats = formats
         setTimeout(() => {
@@ -93,7 +94,7 @@ class FormatPicker extends BaseFloat {
   selectItem (event, item) {
     event.preventDefault()
     event.stopPropagation()
-    const { contentState } = this.muya
+    const contentState = getMuyaContentState(this.muya)
     contentState.render()
     contentState.format(item.type)
     if (/link|image/.test(item.type)) {

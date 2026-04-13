@@ -1,141 +1,60 @@
-import selection from '../selection'
+import {
+  clearContentState,
+  getHistoryState,
+  getPositionReference,
+  initContentState,
+  partialRenderContentState,
+  postRender,
+  renderContentState,
+  setContentCursor,
+  setHistoryState,
+  setNextRenderRange,
+  singleRenderContentState
+} from './renderSupport'
 
 const renderState = ContentState => {
   ContentState.prototype.init = function () {
-    const lastBlock = this.getLastBlock()
-    const { key, text } = lastBlock
-    const offset = text.length
-    this.searchMatches = {
-      value: '',
-      matches: [],
-      index: -1
-    }
-    this.cursor = {
-      start: { key, offset },
-      end: { key, offset }
-    }
+    return initContentState(this)
   }
 
   ContentState.prototype.getHistory = function () {
-    const { stack, index } = this.history
-    return { stack, index }
+    return getHistoryState(this)
   }
 
   ContentState.prototype.setHistory = function ({ stack, index }) {
-    Object.assign(this.history, { stack, index })
+    return setHistoryState(this, { stack, index })
   }
 
   ContentState.prototype.setCursor = function () {
-    selection.setCursorRange(this.cursor)
+    return setContentCursor(this)
   }
 
   ContentState.prototype.setNextRenderRange = function () {
-    const { start, end } = this.cursor
-    const startBlock = this.getBlock(start.key)
-    const endBlock = this.getBlock(end.key)
-    const startOutMostBlock = this.findOutMostBlock(startBlock)
-    const endOutMostBlock = this.findOutMostBlock(endBlock)
-
-    this.renderRange = [startOutMostBlock.preSibling, endOutMostBlock.nextSibling]
+    return setNextRenderRange(this)
   }
 
   ContentState.prototype.postRender = function () {
-    this.resizeLineNumber()
+    return postRender(this)
   }
 
   ContentState.prototype.render = function (isRenderCursor = true, clearCache = false) {
-    const { blocks, searchMatches: { matches, index } } = this
-    const activeBlocks = this.getActiveBlocks()
-    if (clearCache) {
-      this.stateRender.tokenCache.clear()
-    }
-    matches.forEach((m, i) => {
-      m.active = i === index
-    })
-    this.setNextRenderRange()
-    this.stateRender.collectLabels(blocks)
-    this.stateRender.render(blocks, activeBlocks, matches)
-    if (isRenderCursor) {
-      this.setCursor()
-    } else {
-      this.muya.blur()
-    }
-    this.postRender()
+    return renderContentState(this, isRenderCursor, clearCache)
   }
 
   ContentState.prototype.partialRender = function (isRenderCursor = true) {
-    const { blocks, searchMatches: { matches, index } } = this
-    const activeBlocks = this.getActiveBlocks()
-    const [startKey, endKey] = this.renderRange
-    matches.forEach((m, i) => {
-      m.active = i === index
-    })
-
-    let startIndex = startKey ? blocks.findIndex(block => block.key === startKey) : 0
-    if (startIndex === -1) {
-      startIndex = 0
-    }
-
-    let endIndex = blocks.length
-    if (endKey) {
-      const tmpEndIndex = blocks.findIndex(block => block.key === endKey)
-      if (tmpEndIndex >= 0) {
-        endIndex = tmpEndIndex + 1
-      }
-    }
-
-    const blocksToRender = blocks.slice(startIndex, endIndex)
-
-    this.setNextRenderRange()
-    this.stateRender.collectLabels(blocks)
-    this.stateRender.partialRender(blocksToRender, activeBlocks, matches, startKey, endKey)
-    if (isRenderCursor) {
-      this.setCursor()
-    } else {
-      this.muya.blur()
-    }
-    this.postRender()
+    return partialRenderContentState(this, isRenderCursor)
   }
 
   ContentState.prototype.singleRender = function (block, isRenderCursor = true) {
-    const { blocks, searchMatches: { matches, index } } = this
-    const activeBlocks = this.getActiveBlocks()
-    matches.forEach((m, i) => {
-      m.active = i === index
-    })
-    this.setNextRenderRange()
-    this.stateRender.collectLabels(blocks)
-    this.stateRender.singleRender(block, activeBlocks, matches)
-    if (isRenderCursor) {
-      this.setCursor()
-    } else {
-      this.muya.blur()
-    }
-    this.postRender()
+    return singleRenderContentState(this, block, isRenderCursor)
   }
 
   ContentState.prototype.getPositionReference = function () {
-    const { fontSize, lineHeight } = this.muya.options
-    const { start } = this.cursor
-    const block = this.getBlock(start.key)
-    const { x, y, width } = selection.getCursorCoords()
-    const height = fontSize * lineHeight
-    const bottom = y + height
-    const right = x + width
-    const left = x
-    const top = y
-    return {
-      getBoundingClientRect () {
-        return { x, y, top, left, right, bottom, height, width }
-      },
-      clientWidth: width,
-      clientHeight: height,
-      id: block ? block.key : null
-    }
+    return getPositionReference(this)
   }
 
   ContentState.prototype.clear = function () {
-    this.history.clearHistory()
+    return clearContentState(this)
   }
 }
 

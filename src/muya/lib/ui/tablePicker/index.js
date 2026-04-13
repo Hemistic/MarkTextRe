@@ -2,6 +2,7 @@ import BaseFloat from '../baseFloat'
 import { patch, h } from '../../parser/render/snabbdom'
 import './index.css'
 import { EVENT_KEYS } from '../../config'
+import { getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 class TablePicker extends BaseFloat {
   static pluginName = 'tablePicker'
@@ -16,15 +17,15 @@ class TablePicker extends BaseFloat {
     this.oldVnode = null
     this.current = null
     this.select = null
-    const tableContainer = this.tableContainer = document.createElement('div')
+    const tableContainer = this.tableContainer = this.getOwnerDocument().createElement('div')
     this.container.appendChild(tableContainer)
     this.listen()
   }
 
   listen () {
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
     super.listen()
-    eventCenter.subscribe('muya-table-picker', (data, reference, cb) => {
+    eventCenter && eventCenter.subscribe('muya-table-picker', (data, reference, cb) => {
       if (!this.status) {
         this.show(data, reference, cb)
         this.render()

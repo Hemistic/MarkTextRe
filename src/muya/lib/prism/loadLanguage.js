@@ -52,6 +52,8 @@ function initLoadLanguage (Prism) {
       langs = [langs]
     }
 
+    langs = [...new Set(transformAliasToOrigin(langs))]
+
     const promises = []
     // The user might have loaded languages via some other way or used `prism.js` which already includes some
     // We don't need to validate the ids because `getLoader` will ignore invalid ones

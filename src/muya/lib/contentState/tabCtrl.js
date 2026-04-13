@@ -1,4 +1,3 @@
-import selection from '../selection'
 import {
   findNextCell,
   findPreviousCell,
@@ -8,9 +7,7 @@ import {
   indentListItem,
   insertTab,
   checkCursorAtEndFormat,
-  tryJumpOutOfFormat,
-  tryAutocompleteHtmlTag,
-  resolveNextTabCell
+  tabHandler
 } from './tabSupport'
 
 const tabCtrl = ContentState => {
@@ -47,53 +44,7 @@ const tabCtrl = ContentState => {
   }
 
   ContentState.prototype.tabHandler = function (event) {
-    // disable tab focus
-    event.preventDefault()
-
-    const { start, end } = selection.getCursorRange()
-    if (!start || !end) {
-      return
-    }
-    const startBlock = this.getBlock(start.key)
-    const endBlock = this.getBlock(end.key)
-
-    if (event.shiftKey && startBlock.functionType !== 'cellContent') {
-      const unindentType = this.isUnindentableListItem(startBlock)
-      if (unindentType) {
-        this.unindentListItem(startBlock, unindentType)
-      }
-      return
-    }
-
-    // Handle `tab` to jump to the end of format when the cursor is at the end of format content.
-    if (tryJumpOutOfFormat(this, start, end, startBlock)) {
-      return
-    }
-
-    // Auto-complete of inline html tag and html block and `html` code block.
-    if (tryAutocompleteHtmlTag(this, start, end, startBlock)) {
-      return
-    }
-
-    // Handle `tab` key in table cell.
-    const nextCell = resolveNextTabCell(this, event, start, end, startBlock, endBlock)
-    if (nextCell) {
-      const { key } = nextCell
-
-      const offset = 0
-      this.cursor = {
-        start: { key, offset },
-        end: { key, offset }
-      }
-
-      const figure = this.closest(nextCell, 'figure')
-      return this.singleRender(figure)
-    }
-
-    if (this.isIndentableListItem()) {
-      return this.indentListItem()
-    }
-    return this.insertTab()
+    return tabHandler(this, event)
   }
 }
 

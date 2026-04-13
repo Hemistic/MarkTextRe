@@ -17,7 +17,10 @@ const getStyles = function (element) {
     return null
   }
 
-  return window.getComputedStyle ? getComputedStyle(element) : (element.currentStyle || null)
+  const defaultView = element.ownerDocument && element.ownerDocument.defaultView
+  return defaultView && typeof defaultView.getComputedStyle === 'function'
+    ? defaultView.getComputedStyle(element)
+    : (element.currentStyle || null)
 }
 
 /**
@@ -35,12 +38,17 @@ const resizeCodeBlockLineNumber = function (element) {
     const lineNumbersWrapper = element.querySelector('.line-numbers-rows')
     let lineNumberSizer = element.querySelector('.line-numbers-sizer')
     const codeLines = codeElement.textContent.split(NEW_LINE_EXP)
+    const doc = element.ownerDocument
 
-    if (!lineNumberSizer) {
-      lineNumberSizer = document.createElement('span')
+    if (!lineNumberSizer && doc) {
+      lineNumberSizer = doc.createElement('span')
       lineNumberSizer.className = 'line-numbers-sizer'
 
       codeElement.appendChild(lineNumberSizer)
+    }
+
+    if (!lineNumberSizer) {
+      return
     }
 
     lineNumberSizer.style.display = 'block'

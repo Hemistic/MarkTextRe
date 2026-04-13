@@ -1,4 +1,6 @@
 import './index.css'
+import { getNodeDocument } from '../../contentState/runtimeDomSupport'
+import { getMuyaContainer, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 const position = (source, ele) => {
   const rect = source.getBoundingClientRect()
@@ -14,37 +16,46 @@ class Tooltip {
   constructor (muya) {
     this.muya = muya
     this.cache = new WeakMap()
-    const { container, eventCenter } = this.muya
+    this.activeTooltips = new Set()
+    const container = getMuyaContainer(this.muya)
+    const eventCenter = getMuyaEventCenter(this.muya)
 
-    eventCenter.attachDOMEvent(container, 'mouseover', this.mouseOver.bind(this))
+    if (container && eventCenter) {
+      eventCenter.attachDOMEvent(container, 'mouseover', this.mouseOver.bind(this))
+    }
   }
 
   mouseOver (event) {
     const { target } = event
     const toolTipTarget = target.closest('[data-tooltip]')
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
     if (toolTipTarget && !this.cache.has(toolTipTarget)) {
       const tooltip = toolTipTarget.getAttribute('data-tooltip')
-      const tooltipEle = document.createElement('div')
+      const doc = getNodeDocument(toolTipTarget)
+      if (!doc || !doc.body) {
+        return
+      }
+      const tooltipEle = doc.createElement('div')
       tooltipEle.textContent = tooltip
       tooltipEle.classList.add('ag-tooltip')
-      document.body.appendChild(tooltipEle)
+      doc.body.appendChild(tooltipEle)
       position(toolTipTarget, tooltipEle)
 
       this.cache.set(toolTipTarget, tooltipEle)
+      this.activeTooltips.add(tooltipEle)
 
       setTimeout(() => {
         tooltipEle.classList.add('active')
       })
 
       const timer = setInterval(() => {
-        if (!document.body.contains(toolTipTarget)) {
+        if (!doc.body.contains(toolTipTarget)) {
           this.mouseLeave({ target: toolTipTarget })
           clearInterval(timer)
         }
       }, 300)
 
-      eventCenter.attachDOMEvent(toolTipTarget, 'mouseleave', this.mouseLeave.bind(this))
+      eventCenter && eventCenter.attachDOMEvent(toolTipTarget, 'mouseleave', this.mouseLeave.bind(this))
     }
   }
 
@@ -53,8 +64,16 @@ class Tooltip {
     if (this.cache.has(target)) {
       const tooltipEle = this.cache.get(target)
       tooltipEle.remove()
+      this.activeTooltips.delete(tooltipEle)
       this.cache.delete(target)
     }
+  }
+
+  destroy () {
+    for (const tooltip of this.activeTooltips) {
+      tooltip.remove()
+    }
+    this.activeTooltips.clear()
   }
 }
 

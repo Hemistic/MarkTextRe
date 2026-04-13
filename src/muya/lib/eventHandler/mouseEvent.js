@@ -1,5 +1,11 @@
 import { getLinkInfo } from '../utils/getLinkInfo'
 import { collectFootnotes } from '../utils'
+import {
+  getMuyaContainer,
+  getMuyaContentState,
+  getMuyaEventCenter,
+  getMuyaOptions
+} from '../muyaRuntimeAccessSupport'
 
 class MouseEvent {
   constructor (muya) {
@@ -9,13 +15,18 @@ class MouseEvent {
   }
 
   mouseBinding () {
-    const { container, eventCenter } = this.muya
+    const container = getMuyaContainer(this.muya)
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const contentState = getMuyaContentState(this.muya)
+    if (!container || !eventCenter || !contentState) {
+      return
+    }
     const handler = event => {
       const target = event.target
       const parent = target.parentNode
       const preSibling = target.previousElementSibling
       const parentPreSibling = parent ? parent.previousElementSibling : null
-      const { hideLinkPopup, footnote } = this.muya.options
+      const { hideLinkPopup, footnote } = getMuyaOptions(this.muya)
       const rect = parent.getBoundingClientRect()
       const reference = {
         getBoundingClientRect () {
@@ -49,7 +60,7 @@ class MouseEvent {
         eventCenter.dispatch('muya-footnote-tool', {
           reference,
           identifier,
-          footnotes: collectFootnotes(this.muya.contentState.blocks)
+          footnotes: collectFootnotes(contentState.blocks)
         })
       }
     }
@@ -57,7 +68,7 @@ class MouseEvent {
       const target = event.target
       const parent = target.parentNode
       const preSibling = target.previousElementSibling
-      const { footnote } = this.muya.options
+      const { footnote } = getMuyaOptions(this.muya)
       if (parent && parent.tagName === 'A' && parent.classList.contains('ag-inline-rule')) {
         eventCenter.dispatch('muya-link-tools', {
           reference: null
@@ -83,7 +94,12 @@ class MouseEvent {
   }
 
   mouseDown () {
-    const { container, eventCenter, contentState } = this.muya
+    const container = getMuyaContainer(this.muya)
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const contentState = getMuyaContentState(this.muya)
+    if (!container || !eventCenter || !contentState) {
+      return
+    }
     const handler = event => {
       const target = event.target
       if (target.classList && target.classList.contains('ag-drag-handler')) {

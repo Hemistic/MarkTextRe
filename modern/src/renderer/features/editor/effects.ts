@@ -1,15 +1,17 @@
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import type { EditorViewMode } from '@shared/contracts'
 import type { EditorTab } from './types'
-import { getDirtyDocumentSummaries } from './document'
-import { createPersistedSessionState } from './session'
-import { hasMarkTextBridge } from '../../services/api'
 import {
-  persistSessionState,
-  registerWindowCloseCoordinator,
-  syncDirtyState
-} from '../../services/app'
+  createDelayedTaskScheduler,
+  createEditorSessionPersistenceTask,
+  createWindowCloseCoordinator
+} from './effectSupport'
+import { createSessionSnapshotKey } from './serialization'
+import {
+  createEditorEffectRuntimeServices,
+  type EditorEffectRuntimeServices
+} from './effectRuntimeServices'
 
 interface EditorEffectState {
   bootstrapLoaded: Ref<boolean>
@@ -29,52 +31,49 @@ export const setupEditorEffects = ({
   untitledSequence,
   hasDirtyDocuments,
   saveAllDirtyDocuments
-}: EditorEffectState) => {
-  let persistSessionTimer: ReturnType<typeof setTimeout> | null = null
+}: EditorEffectState, runtimeServices: EditorEffectRuntimeServices = createEditorEffectRuntimeServices()) => {
+  const sessionSnapshot = computed(() => createSessionSnapshotKey(
+    viewMode.value,
+    activeTabId.value,
+    untitledSequence.value,
+    tabs.value
+  ))
+  const sessionPersistenceScheduler = createDelayedTaskScheduler({
+    onError: error => {
+      console.error('[modern] failed to persist session state', error)
+    }
+  })
 
   const schedulePersistSessionState = () => {
-    if (!bootstrapLoaded.value || !hasMarkTextBridge()) {
-      return
-    }
-
-    if (persistSessionTimer) {
-      clearTimeout(persistSessionTimer)
-    }
-
-    persistSessionTimer = setTimeout(() => {
-      persistSessionTimer = null
-      void persistSessionState(createPersistedSessionState(
-        viewMode.value,
-        activeTabId.value,
-        untitledSequence.value,
-        tabs.value
-      )).catch(error => {
-        console.error('[modern] failed to persist session state', error)
-      })
-    }, 150)
+    sessionPersistenceScheduler.schedule(createEditorSessionPersistenceTask({
+      bootstrapLoaded: bootstrapLoaded.value,
+      bridgeAvailable: runtimeServices.bridgeAvailable(),
+      persistSessionState: runtimeServices.persistSessionState,
+      viewMode: viewMode.value,
+      activeTabId: activeTabId.value,
+      untitledSequence: untitledSequence.value,
+      tabs: tabs.value
+    }))
   }
 
   watch(hasDirtyDocuments, hasDirty => {
-    void syncDirtyState(hasDirty)
+    void runtimeServices.syncDirtyState(hasDirty)
   }, {
     immediate: true
   })
 
-  watch([
-    viewMode,
-    tabs,
-    activeTabId,
-    untitledSequence
-  ], () => {
+  watch(sessionSnapshot, () => {
     schedulePersistSessionState()
-  }, {
-    deep: true
   })
 
   if (typeof window !== 'undefined') {
-    registerWindowCloseCoordinator({
-      getDirtyDocuments: async () => getDirtyDocumentSummaries(tabs.value),
+    runtimeServices.registerWindowCloseCoordinator(createWindowCloseCoordinator(
+      () => tabs.value,
       saveAllDirtyDocuments
-    })
+    ))
+  }
+
+  return () => {
+    sessionPersistenceScheduler.dispose()
   }
 }

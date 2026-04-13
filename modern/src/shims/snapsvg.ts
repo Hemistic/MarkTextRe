@@ -1,5 +1,7 @@
-import SnapModule from 'snapsvg'
+type SnapGlobal = Window & typeof globalThis & {
+  Snap?: unknown
+}
 
-const Snap = (SnapModule as typeof SnapModule & { default?: typeof SnapModule }).default ?? SnapModule
+const globalScope = globalThis as SnapGlobal
 
-export default Snap
+export default globalScope.Snap

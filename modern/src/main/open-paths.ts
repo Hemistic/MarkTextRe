@@ -2,9 +2,23 @@ import path from 'node:path'
 import { promises as fs } from 'node:fs'
 import { app } from 'electron'
 import type { BrowserWindow } from 'electron'
-import { dispatchAppCommand } from './menu'
+import { legacyMainCommandAdapter } from './app-command-dispatcher'
+import {
+  enqueueUniquePath,
+  extractOpenablePaths as extractOpenablePathsFromArgs
+} from './open-path-support'
+import {
+  activateOpenPathWindow,
+  attachPendingOpenPathFlush,
+  ensureOpenPathWindow,
+  flushPendingOpenPathsToWindow
+} from './open-path-coordinator-support'
+import {
+  captureStartupOpenPaths,
+  queueOpenPathForApp,
+  registerOpenPathAppEvents
+} from './open-path-runtime-support'
 
-type WindowFactory = () => BrowserWindow
 type AsyncWindowFactory = () => Promise<BrowserWindow>
 type WindowGetter = () => BrowserWindow | null
 type WindowSetter = (window: BrowserWindow) => void
@@ -15,13 +29,7 @@ interface OpenPathCoordinatorOptions {
   setWindow: WindowSetter
 }
 
-const MARKDOWN_EXTENSIONS = new Set(['.md', '.markdown', '.mdown', '.mkd', '.txt'])
-
-const enqueueUniquePath = (pendingOpenPaths: string[], pathname: string) => {
-  if (!pendingOpenPaths.includes(pathname)) {
-    pendingOpenPaths.push(pathname)
-  }
-}
+const commandAdapter = legacyMainCommandAdapter
 
 export const createOpenPathCoordinator = ({
   createWindow,
@@ -31,99 +39,49 @@ export const createOpenPathCoordinator = ({
   const pendingOpenPaths: string[] = []
 
   const flushPendingOpenPaths = (window: BrowserWindow) => {
-    if (pendingOpenPaths.length === 0) {
-      return
-    }
-
-    const pathnames = pendingOpenPaths.splice(0, pendingOpenPaths.length)
-    for (const pathname of pathnames) {
-      dispatchAppCommand({
-        command: 'open-path',
-        pathname
-      }, window)
-    }
+    flushPendingOpenPathsToWindow(pendingOpenPaths, window, (message, targetWindow) => {
+      if (message.pathname) {
+        commandAdapter.dispatchOpenPath(message.pathname, targetWindow)
+      }
+    })
   }
 
   const attachWindow = (window: BrowserWindow) => {
-    const flush = () => flushPendingOpenPaths(window)
-
-    if (window.webContents.isLoadingMainFrame()) {
-      window.webContents.once('did-finish-load', flush)
-      return
-    }
-
-    flush()
+    attachPendingOpenPathFlush(window, () => flushPendingOpenPaths(window))
   }
 
   const ensureWindow = async () => {
-    const existingWindow = getWindow()
-    if (existingWindow && !existingWindow.isDestroyed()) {
-      return existingWindow
-    }
-
-    const nextWindow = await createWindow()
-    setWindow(nextWindow)
-    return nextWindow
+    return ensureOpenPathWindow(getWindow, createWindow, setWindow)
   }
 
   const queueOpenPath = (pathname: string) => {
-    enqueueUniquePath(pendingOpenPaths, pathname)
-
-    if (!app.isReady()) {
-      return
-    }
-
-    void ensureWindow().then(window => {
-      if (window.isMinimized()) {
-        window.restore()
-      }
-      window.focus()
-      attachWindow(window)
+    queueOpenPathForApp(pendingOpenPaths, pathname, {
+      activateWindow: activateOpenPathWindow,
+      appReady: () => app.isReady(),
+      attachWindow,
+      ensureWindow,
+      enqueuePath: enqueueUniquePath
     })
-  }
-
-  const normalizePathArgument = async (candidate: string) => {
-    if (!candidate || candidate.startsWith('-')) {
-      return null
-    }
-
-    const normalizedPath = path.resolve(candidate)
-    if (!MARKDOWN_EXTENSIONS.has(path.extname(normalizedPath).toLowerCase())) {
-      return null
-    }
-
-    try {
-      const stat = await fs.stat(normalizedPath)
-      return stat.isFile() ? normalizedPath : null
-    } catch {
-      return null
-    }
   }
 
   const extractOpenablePaths = async (argv: string[]) => {
-    const resolved = await Promise.all(argv.map(argument => normalizePathArgument(argument)))
-    return resolved.filter((pathname): pathname is string => Boolean(pathname))
+    return extractOpenablePathsFromArgs(argv, {
+      pathResolver: path.resolve,
+      statPath: fs.stat
+    })
   }
 
   const captureStartupPaths = async (argv: string[]) => {
-    const startupPaths = await extractOpenablePaths(argv)
-    for (const pathname of startupPaths) {
-      enqueueUniquePath(pendingOpenPaths, pathname)
-    }
+    await captureStartupOpenPaths(argv, pendingOpenPaths, {
+      enqueuePath: enqueueUniquePath,
+      extractOpenablePaths
+    })
   }
 
   const registerAppEventHandlers = () => {
-    app.on('second-instance', (_event, argv) => {
-      void extractOpenablePaths(argv).then(pathnames => {
-        for (const pathname of pathnames) {
-          queueOpenPath(pathname)
-        }
-      })
-    })
-
-    app.on('open-file', (event, pathname) => {
-      event.preventDefault()
-      queueOpenPath(pathname)
+    registerOpenPathAppEvents(app, {
+      extractOpenablePaths,
+      queueOpenPath
     })
   }
 

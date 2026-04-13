@@ -1,3 +1,10 @@
+import {
+  getMuyaContainer,
+  getMuyaContentState,
+  getMuyaEventCenter,
+  getMuyaWindow
+} from '../muyaRuntimeAccessSupport'
+
 class DragDrop {
   constructor (muya) {
     this.muya = muya
@@ -8,7 +15,11 @@ class DragDrop {
   }
 
   dragStartBinding () {
-    const { container, eventCenter } = this.muya
+    const container = getMuyaContainer(this.muya)
+    const eventCenter = getMuyaEventCenter(this.muya)
+    if (!container || !eventCenter) {
+      return
+    }
 
     const dragStartHandler = event => {
       if (event.target.tagName === 'IMG') {
@@ -20,7 +31,12 @@ class DragDrop {
   }
 
   dragOverBinding () {
-    const { container, eventCenter, contentState } = this.muya
+    const container = getMuyaContainer(this.muya)
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const contentState = getMuyaContentState(this.muya)
+    if (!container || !eventCenter || !contentState) {
+      return
+    }
 
     const dragoverHandler = event => {
       contentState.dragoverHandler(event)
@@ -30,7 +46,12 @@ class DragDrop {
   }
 
   dropBinding () {
-    const { container, eventCenter, contentState } = this.muya
+    const container = getMuyaContainer(this.muya)
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const contentState = getMuyaContentState(this.muya)
+    if (!container || !eventCenter || !contentState) {
+      return
+    }
 
     const dropHandler = event => {
       contentState.dropHandler(event)
@@ -40,13 +61,18 @@ class DragDrop {
   }
 
   dragendBinding () {
-    const { eventCenter, contentState } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const contentState = getMuyaContentState(this.muya)
+    const runtimeWindow = getMuyaWindow(this.muya)
+    if (!eventCenter || !contentState || !runtimeWindow) {
+      return
+    }
 
     const dragleaveHandler = event => {
       contentState.dragleaveHandler(event)
     }
 
-    eventCenter.attachDOMEvent(window, 'dragleave', dragleaveHandler)
+    eventCenter.attachDOMEvent(runtimeWindow, 'dragleave', dragleaveHandler)
   }
 }
 

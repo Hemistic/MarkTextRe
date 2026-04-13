@@ -4,6 +4,11 @@ import { BrowserWindow } from 'electron'
 import { installWindowCloseHandler } from './close-manager'
 import { attachWindowDevDiagnostics } from './webcontents'
 import {
+  createMainWindowOptions,
+  getRendererLoadTarget,
+  resolvePreloadPath
+} from './window-support'
+import {
   getInitialWindowState,
   installWindowStatePersistence
 } from './window-state'
@@ -13,28 +18,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const createMainWindow = async () => {
   const devServerUrl = process.env.VITE_DEV_SERVER_URL
   const isDev = Boolean(devServerUrl)
-  const preloadPath = isDev
-    ? path.resolve(__dirname, '../src/preload/preload.cjs')
-    : path.join(__dirname, 'preload.cjs')
+  const preloadPath = resolvePreloadPath({
+    isDev,
+    currentDirname: __dirname
+  })
   const initialWindowState = await getInitialWindowState()
 
-  const window = new BrowserWindow({
-    ...initialWindowState.bounds,
-    minWidth: 1024,
-    minHeight: 640,
-    backgroundColor: '#f4f1e8',
-    frame: process.platform === 'darwin',
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    show: false,
-    webPreferences: {
-      preload: preloadPath,
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-      webSecurity: true,
-      spellcheck: true
-    }
-  })
+  const window = new BrowserWindow(createMainWindowOptions({
+    initialBounds: initialWindowState.bounds,
+    isDev,
+    platform: process.platform,
+    preloadPath
+  }))
 
   window.once('ready-to-show', () => {
     if (initialWindowState.isMaximized) {
@@ -50,10 +45,15 @@ export const createMainWindow = async () => {
     attachWindowDevDiagnostics(window)
   }
 
-  if (isDev) {
-    void window.loadURL(devServerUrl as string)
+  const loadTarget = getRendererLoadTarget({
+    currentDirname: __dirname,
+    devServerUrl: devServerUrl ?? undefined
+  })
+
+  if (loadTarget.kind === 'url') {
+    void window.loadURL(loadTarget.target)
   } else {
-    void window.loadFile(path.join(__dirname, '../dist/index.html'))
+    void window.loadFile(loadTarget.target)
   }
 
   return window

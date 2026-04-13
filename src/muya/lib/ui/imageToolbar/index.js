@@ -1,6 +1,11 @@
 import BaseFloat from '../baseFloat'
 import { patch, h } from '../../parser/render/snabbdom'
 import icons from './config'
+import {
+  dispatchMuyaRuntimeEvent,
+  getMuyaContentState,
+  getMuyaEventCenter
+} from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -26,16 +31,16 @@ class ImageToolbar extends BaseFloat {
     this.options = opts
     this.icons = icons
     this.reference = null
-    const toolbarContainer = this.toolbarContainer = document.createElement('div')
+    const toolbarContainer = this.toolbarContainer = this.getOwnerDocument().createElement('div')
     this.container.appendChild(toolbarContainer)
     this.floatBox.classList.add('ag-image-toolbar-container')
     this.listen()
   }
 
   listen () {
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
     super.listen()
-    eventCenter.subscribe('muya-image-toolbar', ({ reference, imageInfo }) => {
+    eventCenter && eventCenter.subscribe('muya-image-toolbar', ({ reference, imageInfo }) => {
       this.reference = reference
       if (reference) {
         this.imageInfo = imageInfo
@@ -99,12 +104,13 @@ class ImageToolbar extends BaseFloat {
     event.stopPropagation()
 
     const { imageInfo } = this
+    const contentState = getMuyaContentState(this.muya)
     switch (item.type) {
       // Delete image.
       case 'delete':
-        this.muya.contentState.deleteImage(imageInfo)
+        contentState.deleteImage(imageInfo)
         // Hide image transformer
-        this.muya.eventCenter.dispatch('muya-transformer', {
+        dispatchMuyaRuntimeEvent(this.muya, 'muya-transformer', {
           reference: null
         })
         return this.hide()
@@ -118,10 +124,10 @@ class ImageToolbar extends BaseFloat {
           }
         }
         // Hide image transformer
-        this.muya.eventCenter.dispatch('muya-transformer', {
+        dispatchMuyaRuntimeEvent(this.muya, 'muya-transformer', {
           reference: null
         })
-        this.muya.eventCenter.dispatch('muya-image-selector', {
+        dispatchMuyaRuntimeEvent(this.muya, 'muya-image-selector', {
           reference,
           imageInfo,
           cb: () => {}
@@ -132,7 +138,7 @@ class ImageToolbar extends BaseFloat {
       case 'left':
       case 'center':
       case 'right': {
-        this.muya.contentState.updateImage(this.imageInfo, 'data-align', item.type)
+        contentState.updateImage(this.imageInfo, 'data-align', item.type)
         return this.hide()
       }
     }

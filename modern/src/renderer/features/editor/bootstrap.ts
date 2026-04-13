@@ -1,21 +1,25 @@
 import type { ComputedRef } from 'vue'
 import { restoreEditorStateFromBootstrap } from './session'
 import type { EditorStateRefs } from './state'
-import { applyRestoredEditorState } from './state'
-import { loadBootstrapState, syncDirtyState } from '../../services/app'
+import { applyRestoredEditorState, setStatusInState } from './state'
+import {
+  createEditorBootstrapRuntimeServices,
+  type EditorBootstrapRuntimeServices
+} from './bootstrapRuntimeServices'
 
 export const loadEditorBootstrapIntoState = async (
   state: EditorStateRefs,
-  hasDirtyDocuments: ComputedRef<boolean>
+  hasDirtyDocuments: ComputedRef<boolean>,
+  runtimeServices: EditorBootstrapRuntimeServices = createEditorBootstrapRuntimeServices()
 ) => {
-  const bootstrapState = await loadBootstrapState()
+  const bootstrapState = await runtimeServices.loadBootstrapState()
   if (!bootstrapState) {
-    state.status.value = 'Browser preview mode: preload bridge unavailable.'
+    setStatusInState(state.status, 'Browser preview mode: preload bridge unavailable.')
     return false
   }
 
   const restoredState = restoreEditorStateFromBootstrap(bootstrapState)
   applyRestoredEditorState(state, restoredState)
-  await syncDirtyState(hasDirtyDocuments.value)
+  await runtimeServices.syncDirtyState(hasDirtyDocuments.value)
   return true
 }

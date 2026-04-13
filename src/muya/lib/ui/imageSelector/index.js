@@ -4,6 +4,15 @@ import { patch, h } from '../../parser/render/snabbdom'
 import { EVENT_KEYS, URL_REG, isWin } from '../../config'
 import { getUniqueId, getImageInfo as getImageSrc } from '../../utils'
 import { getImageInfo } from '../../utils/getImageInfo'
+import { getContentStateUrlMap } from '../../contentState/runtimeRenderAccessSupport'
+import {
+  dispatchMuyaRuntimeEvent,
+  getMuyaContainer,
+  getMuyaContentState,
+  getMuyaEventCenter,
+  getMuyaImagePathPicker,
+  getMuyaOptions
+} from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -50,7 +59,7 @@ class ImageSelector extends BaseFloat {
       src: '',
       title: ''
     }
-    const imageSelectorContainer = this.imageSelectorContainer = document.createElement('div')
+    const imageSelectorContainer = this.imageSelectorContainer = this.getOwnerDocument().createElement('div')
     this.container.appendChild(imageSelectorContainer)
     this.floatBox.classList.add('ag-image-selector-wrapper')
     this.listen()
@@ -58,11 +67,11 @@ class ImageSelector extends BaseFloat {
 
   listen () {
     super.listen()
-    const { eventCenter } = this.muya
-    eventCenter.subscribe('muya-image-selector', ({ reference, cb, imageInfo }) => {
+    const eventCenter = getMuyaEventCenter(this.muya)
+    eventCenter && eventCenter.subscribe('muya-image-selector', ({ reference, cb, imageInfo }) => {
       if (reference) {
         // Unselected image.
-        const { contentState } = this.muya
+        const contentState = getMuyaContentState(this.muya)
         if (contentState.selectedImage) {
           contentState.selectedImage = null
         }
@@ -163,7 +172,10 @@ class ImageSelector extends BaseFloat {
   }
 
   srcInputKeyDown (event) {
-    const { imagePathPicker } = this.muya
+    const imagePathPicker = getMuyaImagePathPicker(this.muya)
+    if (!imagePathPicker) {
+      return
+    }
     if (!imagePathPicker.status) {
       if (event.key === EVENT_KEYS.Enter) {
         event.stopPropagation()
@@ -201,7 +213,8 @@ class ImageSelector extends BaseFloat {
       return
     }
     const value = event.target.value
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const options = getMuyaOptions(this.muya)
     const reference = this.imageSelectorContainer.querySelector('input.src')
     const cb = item => {
       const { text } = item
@@ -227,9 +240,9 @@ class ImageSelector extends BaseFloat {
     if (!value) {
       list = []
     } else {
-      list = await this.muya.options.imagePathAutoComplete(value)
+      list = await options.imagePathAutoComplete(value)
     }
-    eventCenter.dispatch('muya-image-picker', { reference, list, cb })
+    dispatchMuyaRuntimeEvent(this.muya, 'muya-image-picker', { reference, list, cb })
   }
 
   handleLinkButtonClick () {
@@ -237,16 +250,18 @@ class ImageSelector extends BaseFloat {
   }
 
   replaceImageAsync = async ({ alt, src, title }) => {
-    if (!this.muya.options.imageAction || URL_REG.test(src)) {
+    const options = getMuyaOptions(this.muya)
+    const contentState = getMuyaContentState(this.muya)
+    if (!options.imageAction || URL_REG.test(src)) {
       const { alt: oldAlt, src: oldSrc, title: oldTitle } = this.imageInfo.token.attrs
       if (alt !== oldAlt || src !== oldSrc || title !== oldTitle) {
-        this.muya.contentState.replaceImage(this.imageInfo, { alt, src, title })
+        contentState.replaceImage(this.imageInfo, { alt, src, title })
       }
       this.hide()
     } else {
       if (src) {
         const id = `loading-${getUniqueId()}`
-        this.muya.contentState.replaceImage(this.imageInfo, {
+        contentState.replaceImage(this.imageInfo, {
           alt: id,
           src,
           title
@@ -254,16 +269,18 @@ class ImageSelector extends BaseFloat {
         this.hide()
 
         try {
-          const newSrc = await this.muya.options.imageAction(src, id, alt)
+          const newSrc = await options.imageAction(src, id, alt)
           const { src: localPath } = getImageSrc(src)
           if (localPath) {
-            this.muya.contentState.stateRender.urlMap.set(newSrc, localPath)
+            const urlMap = getContentStateUrlMap(contentState)
+            urlMap && urlMap.set(newSrc, localPath)
           }
-          const imageWrapper = this.muya.container.querySelector(`span[data-id=${id}]`)
+          const container = getMuyaContainer(this.muya)
+          const imageWrapper = container && container.querySelector(`span[data-id=${id}]`)
 
           if (imageWrapper) {
             const imageInfo = getImageInfo(imageWrapper)
-            this.muya.contentState.replaceImage(imageInfo, {
+            contentState.replaceImage(imageInfo, {
               alt,
               src: newSrc,
               title
@@ -277,16 +294,17 @@ class ImageSelector extends BaseFloat {
         this.hide()
       }
     }
-    this.muya.eventCenter.dispatch('stateChange')
+    dispatchMuyaRuntimeEvent(this.muya, 'stateChange')
   }
 
   async handleSelectButtonClick () {
-    if (!this.muya.options.imagePathPicker) {
+    const options = getMuyaOptions(this.muya)
+    if (!options.imagePathPicker) {
       console.warn('You need to add a imagePathPicker option')
       return
     }
 
-    const path = await this.muya.options.imagePathPicker()
+    const path = await options.imagePathPicker()
     const { alt, title } = this.state
     return this.replaceImageAsync({
       alt,

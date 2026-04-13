@@ -3,15 +3,22 @@ import { createPinia } from 'pinia'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import App from './App.vue'
 import { routes } from './router'
+import { ensureLegacyDiagramGlobals } from './services/legacyScripts'
 import './style.css'
 
-const app = createApp(App)
-const pinia = createPinia()
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes
-})
+const bootstrap = async () => {
+  await ensureLegacyDiagramGlobals()
 
-app.use(pinia)
-app.use(router)
-app.mount('#app')
+  const app = createApp(App)
+  const pinia = createPinia()
+  const router = createRouter({
+    history: createWebHashHistory(),
+    routes
+  })
+
+  app.use(pinia)
+  app.use(router)
+  app.mount('#app')
+}
+
+void bootstrap()

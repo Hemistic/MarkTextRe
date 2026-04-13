@@ -110,12 +110,14 @@ export default function renderIcon (block) {
       break
   }
 
-  const iconVnode = h('i.icon', h('i.icon-inner', {
-    style: {
-      background: `url(${icon}) no-repeat`,
-      'background-size': '100%'
-    }
-  }, ''))
+  const iconVnode = h('i.icon', {}, [
+    h('i.icon-inner', {
+      style: {
+        background: `url(${icon}) no-repeat`,
+        'background-size': '100%'
+      }
+    }, '')
+  ])
 
   return h(selector, {
     attrs: {

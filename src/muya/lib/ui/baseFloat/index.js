@@ -2,6 +2,12 @@ import Popper from 'popper.js/dist/esm/popper'
 import resizeDetector from 'element-resize-detector'
 import { noop } from '../../utils'
 import { EVENT_KEYS } from '../../config'
+import {
+  dispatchMuyaRuntimeEvent,
+  getMuyaContainer,
+  getMuyaDocument,
+  getMuyaEventCenter
+} from '../../muyaRuntimeAccessSupport'
 import './index.css'
 
 const defaultOptions = () => ({
@@ -30,23 +36,24 @@ class BaseFloat {
   }
 
   init () {
+    const doc = this.getOwnerDocument()
     const { showArrow } = this.options
-    const floatBox = document.createElement('div')
-    const container = document.createElement('div')
+    const floatBox = doc.createElement('div')
+    const container = doc.createElement('div')
     // Use to remember whick float container is shown.
     container.classList.add(this.name)
     container.classList.add('ag-float-container')
     floatBox.classList.add('ag-float-wrapper')
 
     if (showArrow) {
-      const arrow = document.createElement('div')
+      const arrow = doc.createElement('div')
       arrow.setAttribute('x-arrow', '')
       arrow.classList.add('ag-popper-arrow')
       floatBox.appendChild(arrow)
     }
 
     floatBox.appendChild(container)
-    document.body.appendChild(floatBox)
+    doc.body.appendChild(floatBox)
     this.resizeDetector = resizeDetector({
       strategy: 'scroll'
     })
@@ -71,8 +78,13 @@ class BaseFloat {
   }
 
   listen () {
-    const { eventCenter, container } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const container = getMuyaContainer(this.muya)
     const { floatBox } = this
+    const doc = this.getOwnerDocument()
+    if (!eventCenter || !container || !doc) {
+      return
+    }
     const keydownHandler = event => {
       if (event.key === EVENT_KEYS.Escape) {
         this.hide()
@@ -89,7 +101,7 @@ class BaseFloat {
       }
     }
 
-    eventCenter.attachDOMEvent(document, 'click', this.hide.bind(this))
+    eventCenter.attachDOMEvent(doc, 'click', this.hide.bind(this))
     eventCenter.attachDOMEvent(floatBox, 'click', event => {
       event.stopPropagation()
       event.preventDefault()
@@ -98,21 +110,23 @@ class BaseFloat {
     eventCenter.attachDOMEvent(container, 'scroll', scrollHandler)
   }
 
+  getOwnerDocument () {
+    return getMuyaDocument(this.muya)
+  }
+
   hide () {
-    const { eventCenter } = this.muya
     if (!this.status) return
     this.status = false
     if (this.popper && this.popper.destroy) {
       this.popper.destroy()
     }
     this.cb = noop
-    eventCenter.dispatch('muya-float', this, false)
+    dispatchMuyaRuntimeEvent(this.muya, 'muya-float', this, false)
     this.lastScrollTop = null
   }
 
   show (reference, cb = noop) {
     const { floatBox } = this
-    const { eventCenter } = this.muya
     const { placement, modifiers } = this.options
     if (this.popper && this.popper.destroy) {
       this.popper.destroy()
@@ -123,7 +137,7 @@ class BaseFloat {
       modifiers
     })
     this.status = true
-    eventCenter.dispatch('muya-float', this, true)
+    dispatchMuyaRuntimeEvent(this.muya, 'muya-float', this, true)
   }
 
   destroy () {

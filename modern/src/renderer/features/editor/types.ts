@@ -15,6 +15,7 @@ export interface DocumentWordCount {
 export interface TocItem {
   content: string
   lvl: number
+  slug?: string
 }
 
 export interface EditorTab extends EditorDocument {

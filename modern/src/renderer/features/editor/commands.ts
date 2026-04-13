@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue'
-import type { EditorDocument, EditorViewMode, RecentDocument } from '@shared/contracts'
+import type { EditorViewMode, RecentDocument } from '@shared/contracts'
 import type { EditorTab } from './types'
 import {
   getDirtyTabIds,
@@ -13,22 +13,28 @@ import {
   saveTabDocument
 } from './files'
 import {
-  addRecentDocumentToState,
-  openPreparedDocumentInState,
-  replaceTabInState
+  closePreparedTabInState,
+  setStatusInState
 } from './state'
 import {
-  closeTabInWorkspace,
-  resolveActiveDocument,
-  resolveViewMode
+  applySavedTabWithTracking,
+  openPreparedDocumentWithTracking,
+  resolveDirtyCloseResult
+} from './commandSupport'
+import {
+  findTabById,
+  handleMissingRecentDocumentInState,
+  openTrackedDocumentInState
+} from './commandsSupport'
+import {
+  closeTabInWorkspace
 } from './workspace'
 import {
-  confirmCloseDocument
-} from '../../services/app'
-import { hasMarkTextBridge } from '../../services/api'
-import { removeRecentDocument } from '../../services/files'
+  createEditorCommandsRuntimeServices,
+  type EditorCommandsRuntimeServices
+} from './commandsRuntimeServices'
 
-interface EditorCommandState {
+export interface EditorCommandState {
   tabs: Ref<EditorTab[]>
   activeDocument: ComputedRef<EditorTab | null>
   activeTabId: Ref<string | null>
@@ -39,97 +45,89 @@ interface EditorCommandState {
 
 type RefreshRecentDocuments = () => Promise<void>
 
-const addRecentDocument = (
-  recentDocuments: Ref<RecentDocument[]>,
-  document: EditorDocument
-) => {
-  addRecentDocumentToState(recentDocuments, document)
-}
+const createFileRuntimeServices = (
+  runtimeServices: EditorCommandsRuntimeServices
+) => ({
+  openMarkdown: runtimeServices.openMarkdown,
+  openMarkdownAtPath: runtimeServices.openMarkdownAtPath,
+  saveMarkdown: runtimeServices.saveMarkdown,
+  saveMarkdownAs: runtimeServices.saveMarkdownAs
+})
+
+const createCommandSupportRuntimeServices = (
+  runtimeServices: EditorCommandsRuntimeServices
+) => ({
+  removeRecentDocument: runtimeServices.removeRecentDocument
+})
 
 export const openDocumentInState = async (
   state: EditorCommandState,
-  refreshRecentDocuments: RefreshRecentDocuments
+  refreshRecentDocuments: RefreshRecentDocuments,
+  runtimeServices: EditorCommandsRuntimeServices = createEditorCommandsRuntimeServices()
 ) => {
-  if (!hasMarkTextBridge()) {
-    state.status.value = OPEN_UNAVAILABLE_STATUS
+  if (!runtimeServices.bridgeAvailable()) {
+    setStatusInState(state.status, OPEN_UNAVAILABLE_STATUS)
     return
   }
 
-  const document = await openDocumentFromPicker()
+  const document = await openDocumentFromPicker(createFileRuntimeServices(runtimeServices))
   if (!document) {
     return
   }
 
-  openPreparedDocumentInState(
-    state.tabs,
-    state.activeDocument,
-    state.activeTabId,
-    state.viewMode,
-    state.status,
-    document,
-    `Opened ${document.filename}`
-  )
-  addRecentDocument(state.recentDocuments, document)
-  await refreshRecentDocuments()
+  await openTrackedDocumentInState(state, refreshRecentDocuments, document)
 }
 
 export const reopenRecentDocumentInState = async (
   state: EditorCommandState,
   refreshRecentDocuments: RefreshRecentDocuments,
-  pathname: string
+  pathname: string,
+  runtimeServices: EditorCommandsRuntimeServices = createEditorCommandsRuntimeServices()
 ) => {
-  if (!hasMarkTextBridge()) {
-    state.status.value = REOPEN_UNAVAILABLE_STATUS
+  if (!runtimeServices.bridgeAvailable()) {
+    setStatusInState(state.status, REOPEN_UNAVAILABLE_STATUS)
     return
   }
 
-  const document = await reopenDocumentFromPath(pathname)
+  const document = await reopenDocumentFromPath(pathname, createFileRuntimeServices(runtimeServices))
   if (!document) {
-    await removeRecentDocument(pathname)
-    await refreshRecentDocuments()
-    state.status.value = RECENT_FILE_OPEN_FAILED_STATUS
+    await handleMissingRecentDocumentInState(
+      state.status,
+      refreshRecentDocuments,
+      pathname,
+      RECENT_FILE_OPEN_FAILED_STATUS,
+      createCommandSupportRuntimeServices(runtimeServices)
+    )
     return
   }
 
-  openPreparedDocumentInState(
-    state.tabs,
-    state.activeDocument,
-    state.activeTabId,
-    state.viewMode,
-    state.status,
-    document,
-    `Opened ${document.filename}`
-  )
-  addRecentDocument(state.recentDocuments, document)
-  await refreshRecentDocuments()
+  await openTrackedDocumentInState(state, refreshRecentDocuments, document)
 }
 
 export const saveDocumentInState = async (
   state: EditorCommandState,
   refreshRecentDocuments: RefreshRecentDocuments,
   id: string,
-  saveAs = false
+  saveAs = false,
+  runtimeServices: EditorCommandsRuntimeServices = createEditorCommandsRuntimeServices()
 ) => {
-  if (!hasMarkTextBridge()) {
-    state.status.value = saveAs ? SAVE_AS_UNAVAILABLE_STATUS : SAVE_UNAVAILABLE_STATUS
+  if (!runtimeServices.bridgeAvailable()) {
+    setStatusInState(state.status, saveAs ? SAVE_AS_UNAVAILABLE_STATUS : SAVE_UNAVAILABLE_STATUS)
     return null
   }
 
-  const current = state.tabs.value.find(tab => tab.id === id)
+  const current = findTabById(state.tabs.value, id)
   if (!current) {
     return null
   }
 
-  const nextTab = await saveTabDocument(current, saveAs)
+  const nextTab = await saveTabDocument(current, saveAs, createFileRuntimeServices(runtimeServices))
   if (!nextTab) {
     return null
   }
 
-  replaceTabInState(state.tabs, state.activeTabId, current.id, nextTab)
-  addRecentDocument(state.recentDocuments, nextTab)
-  state.status.value = saveAs ? `Saved as ${nextTab.filename}` : `Saved ${nextTab.filename}`
-  state.viewMode.value = resolveViewMode(resolveActiveDocument(state.tabs.value, state.activeTabId.value))
-  await refreshRecentDocuments()
+  await applySavedTabWithTracking(state, refreshRecentDocuments, current.id, nextTab)
+  setStatusInState(state.status, saveAs ? `Saved as ${nextTab.filename}` : `Saved ${nextTab.filename}`)
   return nextTab
 }
 
@@ -152,30 +150,22 @@ export const saveAllDirtyDocumentsInState = async (
 export const closeDocumentTabInState = async (
   state: EditorCommandState,
   refreshRecentDocuments: RefreshRecentDocuments,
-  id: string
+  id: string,
+  runtimeServices: EditorCommandsRuntimeServices = createEditorCommandsRuntimeServices()
 ) => {
-  const current = state.tabs.value.find(tab => tab.id === id)
+  const current = findTabById(state.tabs.value, id)
   if (!current) {
     return
   }
 
-  let closingId = id
+  const { closingId } = await resolveDirtyCloseResult(
+    current,
+    runtimeServices.confirmCloseDocument,
+    () => saveDocumentInState(state, refreshRecentDocuments, id, false, runtimeServices)
+  )
 
-  if (current.dirty) {
-    const decision = await confirmCloseDocument(current.filename)
-
-    if (decision === 'cancel') {
-      return
-    }
-
-    if (decision === 'save') {
-      const savedTab = await saveDocumentInState(state, refreshRecentDocuments, id)
-      if (!savedTab) {
-        return
-      }
-
-      closingId = savedTab.id
-    }
+  if (!closingId) {
+    return
   }
 
   const nextState = closeTabInWorkspace(state.tabs.value, state.activeTabId.value, closingId)
@@ -183,8 +173,5 @@ export const closeDocumentTabInState = async (
     return
   }
 
-  state.tabs.value = nextState.tabs
-  state.activeTabId.value = nextState.activeTabId
-  state.viewMode.value = nextState.viewMode
-  state.status.value = `Closed ${nextState.closedTab.filename}`
+  closePreparedTabInState(state, nextState)
 }

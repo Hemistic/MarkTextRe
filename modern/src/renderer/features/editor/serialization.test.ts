@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { EditorTab } from './types'
 import {
+  createSessionSnapshotKey,
   resolveSessionState,
   serializeSessionState
 } from './serialization'
@@ -71,13 +72,8 @@ describe('serialization', () => {
       })
     ]).tabs
 
-    expect(serializedTab?.cursor).toEqual({
-      start: 1,
-      skip: null
-    })
-    expect(serializedTab?.history).toEqual({
-      self: null
-    })
+    expect(serializedTab?.cursor).toBeNull()
+    expect(serializedTab?.history).toBeNull()
     expect(serializedTab?.toc).toEqual([{
       content: 'Example',
       lvl: 1,
@@ -101,8 +97,8 @@ describe('serialization', () => {
         cursor: null,
         history: null,
         toc: [
-          { content: 'Real Title', lvl: 1 },
-          { content: 'Child', lvl: 2 }
+          { content: 'Real Title', lvl: 1, slug: 'real-title' },
+          { content: 'Child', lvl: 2, slug: 'child' }
         ]
       }]
     })
@@ -111,5 +107,25 @@ describe('serialization', () => {
       { depth: 1, text: 'Real Title' },
       { depth: 2, text: 'Child' }
     ])
+  })
+
+  it('reuses the persisted session shape when building snapshot keys', () => {
+    const tab = createTab({
+      headings: [{ depth: 9, text: 'Ignored runtime heading' }],
+      lineCount: 99,
+      wordCount: {
+        word: 99,
+        paragraph: 99,
+        character: 99,
+        all: 99
+      },
+      toc: [{ content: 'Example', lvl: 1 }]
+    })
+
+    const serialized = serializeSessionState('editor', tab.id, 3, [tab])
+    const snapshotKey = createSessionSnapshotKey('editor', tab.id, 3, [tab])
+
+    expect(snapshotKey).toBe(JSON.stringify(serialized))
+    expect(snapshotKey).not.toContain('Ignored runtime heading')
   })
 })

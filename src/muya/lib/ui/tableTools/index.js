@@ -1,6 +1,7 @@
 import BaseFloat from '../baseFloat'
 import { patch, h } from '../../parser/render/snabbdom'
 import { toolList } from './config'
+import { getMuyaContentState, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -25,15 +26,15 @@ class TableBarTools extends BaseFloat {
     this.oldVnode = null
     this.tableInfo = null
     this.floatBox.classList.add('ag-table-bar-tools')
-    const tableBarContainer = this.tableBarContainer = document.createElement('div')
+    const tableBarContainer = this.tableBarContainer = this.getOwnerDocument().createElement('div')
     this.container.appendChild(tableBarContainer)
     this.listen()
   }
 
   listen () {
     super.listen()
-    const { eventCenter } = this.muya
-    eventCenter.subscribe('muya-table-bar', ({ reference, tableInfo }) => {
+    const eventCenter = getMuyaEventCenter(this.muya)
+    eventCenter && eventCenter.subscribe('muya-table-bar', ({ reference, tableInfo }) => {
       if (reference) {
         this.tableInfo = tableInfo
         this.show(reference)
@@ -77,7 +78,7 @@ class TableBarTools extends BaseFloat {
     event.preventDefault()
     event.stopPropagation()
 
-    const { contentState } = this.muya
+    const contentState = getMuyaContentState(this.muya)
     contentState.editTable(item)
     this.hide()
   }

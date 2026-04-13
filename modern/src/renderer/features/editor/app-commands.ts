@@ -1,6 +1,6 @@
-import type { AppCommand, AppCommandMessage } from '@shared/contracts'
+import type { AppCommandMessage } from '@shared/contracts'
 
-interface EditorCommandExecutor {
+export interface EditorCommandExecutor {
   createTab: () => void
   openDocument: () => Promise<void>
   openDocumentAtPath: (pathname: string) => Promise<void>

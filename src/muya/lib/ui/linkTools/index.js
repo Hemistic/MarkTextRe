@@ -1,6 +1,7 @@
 import BaseFloat from '../baseFloat'
 import { patch, h } from '../../parser/render/snabbdom'
 import icons from './config'
+import { getMuyaContentState, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -26,15 +27,15 @@ class LinkTools extends BaseFloat {
     this.options = opts
     this.icons = icons
     this.hideTimer = null
-    const linkContainer = this.linkContainer = document.createElement('div')
+    const linkContainer = this.linkContainer = this.getOwnerDocument().createElement('div')
     this.container.appendChild(linkContainer)
     this.listen()
   }
 
   listen () {
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
     super.listen()
-    eventCenter.subscribe('muya-link-tools', ({ reference, linkInfo }) => {
+    eventCenter && eventCenter.subscribe('muya-link-tools', ({ reference, linkInfo }) => {
       if (reference) {
         this.linkInfo = linkInfo
         setTimeout(() => {
@@ -105,7 +106,7 @@ class LinkTools extends BaseFloat {
   selectItem (event, item) {
     event.preventDefault()
     event.stopPropagation()
-    const { contentState } = this.muya
+    const contentState = getMuyaContentState(this.muya)
     switch (item.type) {
       case 'unlink':
         contentState.unlink(this.linkInfo)
@@ -116,6 +117,14 @@ class LinkTools extends BaseFloat {
         this.hide()
         break
     }
+  }
+
+  destroy () {
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer)
+      this.hideTimer = null
+    }
+    super.destroy()
   }
 }
 

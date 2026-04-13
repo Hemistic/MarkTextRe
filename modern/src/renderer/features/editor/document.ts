@@ -3,38 +3,19 @@ import type {
   EditorDocument
 } from '@shared/contracts'
 import type {
-  DocumentWordCount,
   EditorChangePayload,
-  EditorTab,
-  HeadingItem
+  EditorTab
 } from './types'
 import defaultSampleMarkdown from '../../assets/default-sample.md?raw'
+import { summarizeMarkdown } from './document-summary-support'
+import {
+  createEditorPayloadPatch,
+  createMarkdownUpdatePatch
+} from './document-payload-support'
 
 export const DEFAULT_STATUS = 'Open a Markdown file or create a new one.'
 export const UNTITLED_TEMPLATE = '# Untitled\n\n'
-
-export const summarizeMarkdown = (markdown: string) => {
-  const headings: HeadingItem[] = markdown
-    .split(/\r?\n/)
-    .filter(line => /^#{1,6}\s/.test(line))
-    .map(line => ({
-      depth: line.match(/^#+/)?.[0].length ?? 1,
-      text: line.replace(/^#{1,6}\s*/, '')
-    }))
-
-  const words = markdown.trim().match(/\S+/g)
-
-  return {
-    headings,
-    lineCount: markdown.length === 0 ? 1 : markdown.split(/\r?\n/).length,
-    wordCount: {
-      word: words ? words.length : 0,
-      paragraph: markdown.split(/\n{2,}/).filter(line => line.trim()).length,
-      character: markdown.length,
-      all: markdown.length
-    } satisfies DocumentWordCount
-  }
-}
+export { summarizeMarkdown } from './document-summary-support'
 
 export const createEditorTab = (document: EditorDocument, kind: EditorTab['kind']): EditorTab => {
   const summary = summarizeMarkdown(document.markdown)
@@ -95,17 +76,17 @@ export const updateTabMarkdown = (tabs: EditorTab[], activeDocumentId: string, m
       return tab
     }
 
-    const summary = summarizeMarkdown(markdown)
-
     return {
       ...tab,
-      markdown,
-      dirty: markdown !== tab.savedMarkdown,
-      headings: summary.headings,
-      lineCount: summary.lineCount,
-      wordCount: summary.wordCount
+      ...createMarkdownUpdatePatch(tab.savedMarkdown, markdown, summarizeMarkdown(markdown))
     }
   })
+}
+
+export const updateEditorTabMarkdownInPlace = (tab: EditorTab, markdown: string) => {
+  Object.assign(tab, createMarkdownUpdatePatch(tab.savedMarkdown, markdown, summarizeMarkdown(markdown)))
+
+  return tab
 }
 
 export const applyEditorPayloadToTab = (tabs: EditorTab[], activeDocumentId: string, payload: EditorChangePayload) => {
@@ -114,25 +95,17 @@ export const applyEditorPayloadToTab = (tabs: EditorTab[], activeDocumentId: str
       return tab
     }
 
-    const summary = summarizeMarkdown(payload.markdown)
-    const nextToc = payload.toc ?? tab.toc
-    const headings = nextToc.length > 0
-      ? nextToc.map(item => ({
-        depth: item.lvl,
-        text: item.content
-      }))
-      : summary.headings
-
     return {
       ...tab,
-      markdown: payload.markdown,
-      dirty: payload.markdown !== tab.savedMarkdown,
-      headings,
-      lineCount: summary.lineCount,
-      wordCount: payload.wordCount ?? summary.wordCount,
-      cursor: payload.cursor ?? tab.cursor,
-      history: payload.history ?? tab.history,
-      toc: nextToc
+      ...createEditorPayloadPatch(tab, payload, summarizeMarkdown(payload.markdown)),
+      cursor: tab.cursor,
+      history: tab.history,
     }
   })
+}
+
+export const applyEditorPayloadToTabInPlace = (tab: EditorTab, payload: EditorChangePayload) => {
+  Object.assign(tab, createEditorPayloadPatch(tab, payload, summarizeMarkdown(payload.markdown)))
+
+  return tab
 }

@@ -1,3 +1,5 @@
+import { dispatchContentStateChange } from './runtimeEventSupport'
+
 const linkCtrl = ContentState => {
   /**
    * Change a link into text.
@@ -39,7 +41,7 @@ const linkCtrl = ContentState => {
     }
 
     this.singleRender(block)
-    return this.muya.dispatchChange()
+    return dispatchContentStateChange(this)
   }
 }
 

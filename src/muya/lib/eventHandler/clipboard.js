@@ -1,3 +1,11 @@
+import {
+  getMuyaContainer,
+  getMuyaContentState,
+  getMuyaDocument,
+  getMuyaEventCenter,
+  triggerMuyaChange
+} from '../muyaRuntimeAccessSupport'
+
 class Clipboard {
   constructor (muya) {
     this.muya = muya
@@ -8,7 +16,13 @@ class Clipboard {
   }
 
   listen () {
-    const { container, eventCenter, contentState } = this.muya
+    const container = getMuyaContainer(this.muya)
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const contentState = getMuyaContentState(this.muya)
+    const doc = getMuyaDocument(this.muya)
+    if (!container || !eventCenter || !contentState || !doc || !doc.body) {
+      return
+    }
     const docPasteHandler = event => {
       contentState.docPasteHandler(event)
     }
@@ -32,32 +46,35 @@ class Clipboard {
     const pasteHandler = event => {
       contentState.pasteHandler(event, this._pasteType)
       this._pasteType = 'normal'
-      this.muya.dispatchChange()
+      triggerMuyaChange(this.muya)
     }
 
-    eventCenter.attachDOMEvent(document, 'paste', docPasteHandler)
+    eventCenter.attachDOMEvent(doc, 'paste', docPasteHandler)
     eventCenter.attachDOMEvent(container, 'paste', pasteHandler)
     eventCenter.attachDOMEvent(container, 'cut', copyCutHandler)
     eventCenter.attachDOMEvent(container, 'copy', copyCutHandler)
-    eventCenter.attachDOMEvent(document.body, 'cut', docCopyCutHandler)
-    eventCenter.attachDOMEvent(document.body, 'copy', docCopyCutHandler)
+    eventCenter.attachDOMEvent(doc.body, 'cut', docCopyCutHandler)
+    eventCenter.attachDOMEvent(doc.body, 'copy', docCopyCutHandler)
   }
 
   // TODO: `document.execCommand` is deprecated!
 
   copyAsMarkdown () {
     this._copyType = 'copyAsMarkdown'
-    document.execCommand('copy')
+    const doc = getMuyaDocument(this.muya)
+    doc && doc.execCommand('copy')
   }
 
   copyAsHtml () {
     this._copyType = 'copyAsHtml'
-    document.execCommand('copy')
+    const doc = getMuyaDocument(this.muya)
+    doc && doc.execCommand('copy')
   }
 
   pasteAsPlainText () {
     this._pasteType = 'pasteAsPlainText'
-    document.execCommand('paste')
+    const doc = getMuyaDocument(this.muya)
+    doc && doc.execCommand('paste')
   }
 
   /**
@@ -68,7 +85,8 @@ class Clipboard {
   copy (type, info) {
     this._copyType = type
     this._copyInfo = info
-    document.execCommand('copy')
+    const doc = getMuyaDocument(this.muya)
+    doc && doc.execCommand('copy')
   }
 }
 

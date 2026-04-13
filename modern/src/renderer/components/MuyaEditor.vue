@@ -1,8 +1,17 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import 'legacy-muya/themes/prismjs/light.theme.css'
+import { ref } from 'vue'
 import 'legacy-muya/themes/default.css'
+import 'legacy-muya/themes/prismjs/light.theme.css'
+import '../styles/muya-code-theme.css'
 import type { EditorChangePayload } from '../features/editor/types'
+import {
+  scrollMuyaToHeading
+} from '../features/muya/navigation'
+import {
+  searchMuyaDocument,
+  stepMuyaSearch
+} from '../features/muya/search'
+import { useMuyaEditor } from './useMuyaEditor'
 
 const props = defineProps<{
   documentId: string
@@ -17,87 +26,37 @@ const emit = defineEmits<{
 }>()
 
 const host = ref<HTMLElement | null>(null)
-const loadError = ref('')
-let editor: any = null
-let applyingExternalUpdate = false
-let lastMarkdown = props.modelValue
-
-const restoreEditorState = (markdown: string, cursor?: unknown, history?: unknown) => {
-  if (!editor) return
-
-  applyingExternalUpdate = true
-  lastMarkdown = markdown
-
-  try {
-    if (cursor) {
-      editor.setMarkdown(markdown, cursor, true)
-    } else {
-      editor.setMarkdown(markdown)
-    }
-
-    if (history && typeof editor.setHistory === 'function') {
-      editor.setHistory(history)
-    }
-  } finally {
-    queueMicrotask(() => {
-      applyingExternalUpdate = false
-    })
-  }
-}
-
-onMounted(async () => {
-  if (!host.value) return
-
-  try {
-    // @ts-expect-error Legacy Muya source is imported through a Vite alias bridge.
-    const { default: Muya } = await import('legacy-muya/lib/index.js')
-
-    editor = new Muya(host.value, {
-      markdown: props.modelValue,
-      focusMode: false,
-      hideQuickInsertHint: true,
-      spellcheckEnabled: false,
-      disableHtml: false,
-      imagePathAutoComplete: () => [],
-      clipboardFilePath: () => undefined
-    })
-
-    // Muya.destroy() assumes these plugin slots exist, even if the plugins are not registered.
-    for (const key of ['quickInsert', 'codePicker', 'tablePicker', 'emojiPicker', 'imagePathPicker']) {
-      if (!editor[key]) {
-        editor[key] = { destroy () {} }
-      }
-    }
-
-    restoreEditorState(props.modelValue, props.cursor, props.history)
-
-    editor.on('change', (payload: EditorChangePayload) => {
-      const { markdown } = payload
-      lastMarkdown = markdown
-      emit('editor-change', payload)
-      if (!applyingExternalUpdate && markdown !== props.modelValue) {
-        emit('update:modelValue', markdown)
-      }
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    loadError.value = message
-    console.error('[modern] failed to initialize Muya', error)
-  }
+const { loadError, editorRef } = useMuyaEditor(host, props, {
+  updateModelValue: value => emit('update:modelValue', value),
+  editorChange: payload => emit('editor-change', payload)
 })
 
-watch(
-  () => props.modelValue,
-  markdown => {
-    if (!editor || markdown === lastMarkdown) return
+const search = (value: string) => {
+  return searchMuyaDocument(editorRef(), value)
+}
 
-    restoreEditorState(markdown, props.cursor, props.history)
-  }
-)
+const find = (direction: 'prev' | 'next') => {
+  return stepMuyaSearch(editorRef(), direction)
+}
 
-onBeforeUnmount(() => {
-  editor?.destroy?.()
-  editor = null
+const undo = () => {
+  editorRef()?.undo?.()
+}
+
+const redo = () => {
+  editorRef()?.redo?.()
+}
+
+const scrollToHeading = (slug: string) => {
+  scrollMuyaToHeading(editorRef()?.container, slug)
+}
+
+defineExpose({
+  search,
+  find,
+  undo,
+  redo,
+  scrollToHeading
 })
 </script>
 

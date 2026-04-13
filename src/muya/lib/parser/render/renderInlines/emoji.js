@@ -1,12 +1,35 @@
 import { CLASS_OR_ID } from '../../../config'
-import { validEmoji } from '../../../ui/emojis'
+import { ensureEmojiModule, getCachedEmojiModule } from '../../../ui/emojis/runtimeSupport'
+
+let isEmojiValidationPending = false
+
+const requestEmojiValidationRender = stateRender => {
+  if (isEmojiValidationPending) {
+    return
+  }
+
+  isEmojiValidationPending = true
+  ensureEmojiModule()
+    .then(() => {
+      stateRender.muya.contentState.partialRender()
+    })
+    .catch(err => {
+      console.warn(err)
+    })
+    .finally(() => {
+      isEmojiValidationPending = false
+    })
+}
 
 // render token of emoji to vdom
 export default function emoji (h, cursor, block, token, outerClass) {
   const { start: rStart, end: rEnd } = token.range
   const className = this.getClassName(outerClass, block, token, cursor)
-  const validation = validEmoji(token.content)
-  const finalClass = validation ? className : CLASS_OR_ID.AG_WARN
+  const emojiModule = getCachedEmojiModule()
+  const validation = emojiModule ? emojiModule.validEmoji(token.content) : null
+  const finalClass = emojiModule
+    ? (validation ? className : CLASS_OR_ID.AG_WARN)
+    : className
   const contentSelector = finalClass !== CLASS_OR_ID.AG_GRAY
     ? `span.${finalClass}.${CLASS_OR_ID.AG_INLINE_RULE}.${CLASS_OR_ID.AG_EMOJI_MARKED_TEXT}`
     : `span.${CLASS_OR_ID.AG_INLINE_RULE}.${CLASS_OR_ID.AG_EMOJI_MARKED_TEXT}`
@@ -40,6 +63,10 @@ export default function emoji (h, cursor, block, token, outerClass) {
     if (pos < rEnd - token.marker.length) {
       content.push(block.text.substring(pos, rEnd - 1))
     }
+  }
+
+  if (!emojiModule) {
+    requestEmojiValidationRender(this)
   }
 
   const emojiVdom = validation

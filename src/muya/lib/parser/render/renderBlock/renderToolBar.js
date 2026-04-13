@@ -37,12 +37,14 @@ const renderToolBar = (type, tools, activeBlocks) => {
     if (align && label === align) {
       selector += '.active'
     }
-    const iconVnode = h('i.icon', h(`i.icon-${label}`, {
-      style: {
-        background: `url(${icon}) no-repeat`,
-        'background-size': '100%'
-      }
-    }, ''))
+    const iconVnode = h('i.icon', {}, [
+      h(`i.icon-${label}`, {
+        style: {
+          background: `url(${icon}) no-repeat`,
+          'background-size': '100%'
+        }
+      }, '')
+    ])
     return h(selector, {
       dataset: {
         label,

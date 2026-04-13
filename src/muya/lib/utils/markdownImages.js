@@ -1,13 +1,12 @@
-import StateRender from '../parser/render'
 import { tokenizer } from '../parser'
+import { collectReferenceLabels } from '../parser/referenceLabelSupport'
 import { getImageInfo } from '../utils'
 import { markdownToState } from './markdownState'
 
 export const extractImagesFromMarkdown = (contentState, markdown) => {
   const results = new Set()
   const blocks = markdownToState(contentState, markdown)
-  const render = new StateRender(contentState.muya)
-  render.collectLabels(blocks)
+  const labels = collectReferenceLabels(blocks)
 
   const travelToken = token => {
     const { type, attrs, children, tag, label, backlash } = token
@@ -16,8 +15,8 @@ export const extractImagesFromMarkdown = (contentState, markdown) => {
         results.add(attrs.src)
       } else {
         const rawSrc = label + backlash.second
-        if (render.labels.has(rawSrc.toLowerCase())) {
-          const { href } = render.labels.get(rawSrc.toLowerCase())
+        if (labels.has(rawSrc.toLowerCase())) {
+          const { href } = labels.get(rawSrc.toLowerCase())
           const { src } = getImageInfo(href)
           if (src) {
             results.add(src)
@@ -38,7 +37,7 @@ export const extractImagesFromMarkdown = (contentState, markdown) => {
         travel(b)
       }
     } else if (text && type === 'span' && /paragraphContent|atxLine|cellContent/.test(functionType)) {
-      const tokens = tokenizer(text, [], false, render.labels)
+      const tokens = tokenizer(text, [], false, labels)
       for (const token of tokens) {
         travelToken(token)
       }

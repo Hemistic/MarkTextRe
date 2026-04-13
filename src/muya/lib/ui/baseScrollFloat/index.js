@@ -1,5 +1,6 @@
 import BaseFloat from '../baseFloat'
 import { EVENT_KEYS } from '../../config'
+import { getMuyaContainer, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 class BaseScrollFloat extends BaseFloat {
   constructor (muya, name, options = {}) {
@@ -12,7 +13,7 @@ class BaseScrollFloat extends BaseFloat {
 
   createScrollElement () {
     const { container } = this
-    const scrollElement = document.createElement('div')
+    const scrollElement = this.getOwnerDocument().createElement('div')
     container.appendChild(scrollElement)
     this.scrollElement = scrollElement
   }
@@ -29,7 +30,11 @@ class BaseScrollFloat extends BaseFloat {
 
   listen () {
     super.listen()
-    const { eventCenter, container } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
+    const container = getMuyaContainer(this.muya)
+    if (!eventCenter || !container) {
+      return
+    }
     const handler = event => {
       if (!this.status) return
       switch (event.key) {
@@ -58,7 +63,9 @@ class BaseScrollFloat extends BaseFloat {
 
   show (reference, cb) {
     this.cb = cb
-    if (reference instanceof HTMLElement) {
+    const view = this.getOwnerDocument().defaultView
+    const HTMLElementCtor = view ? view.HTMLElement : HTMLElement
+    if (reference instanceof HTMLElementCtor) {
       if (this.reference && this.reference === reference && this.status) return
     } else {
       if (this.reference && this.reference.id === reference.id && this.status) return

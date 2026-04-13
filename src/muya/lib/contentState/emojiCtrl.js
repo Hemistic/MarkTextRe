@@ -1,4 +1,5 @@
 import { tokenizer, generator } from '../parser/'
+import { getContentStateOptions } from './runtimeOptionSupport'
 
 const emojiCtrl = ContentState => {
   ContentState.prototype.setEmoji = function (item) {
@@ -6,7 +7,7 @@ const emojiCtrl = ContentState => {
     const startBlock = this.getBlock(key)
     const { text } = startBlock
     const tokens = tokenizer(text, {
-      options: this.muya.options
+      options: getContentStateOptions(this)
     })
     let delta = 0
 

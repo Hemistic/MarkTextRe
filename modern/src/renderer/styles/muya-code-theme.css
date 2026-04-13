@@ -1,0 +1,83 @@
+.muya-host .ag-code-content[class*="language-"] {
+  color: #24292f;
+}
+
+.muya-host .ag-code-content .token.comment,
+.muya-host .ag-code-content .token.prolog,
+.muya-host .ag-code-content .token.doctype,
+.muya-host .ag-code-content .token.cdata {
+  color: #6e7781;
+}
+
+.muya-host .ag-code-content .token.punctuation {
+  color: #6e7781;
+}
+
+.muya-host .ag-code-content .token.property,
+.muya-host .ag-code-content .token.tag,
+.muya-host .ag-code-content .token.boolean,
+.muya-host .ag-code-content .token.number,
+.muya-host .ag-code-content .token.constant,
+.muya-host .ag-code-content .token.symbol {
+  color: #cf222e;
+}
+
+.muya-host .ag-code-content .token.selector,
+.muya-host .ag-code-content .token.attr-name,
+.muya-host .ag-code-content .token.string,
+.muya-host .ag-code-content .token.char,
+.muya-host .ag-code-content .token.builtin,
+.muya-host .ag-code-content .token.inserted {
+  color: #116329;
+}
+
+.muya-host .ag-code-content .token.deleted {
+  color: #a40e26;
+}
+
+.muya-host .ag-code-content .token.operator,
+.muya-host .ag-code-content .token.entity,
+.muya-host .ag-code-content .token.url {
+  color: #825a2c;
+}
+
+.muya-host .ag-code-content .token.atrule,
+.muya-host .ag-code-content .token.attr-value,
+.muya-host .ag-code-content .token.keyword,
+.muya-host .ag-code-content .token.key {
+  color: #0550ae;
+}
+
+.muya-host .ag-code-content .token.function,
+.muya-host .ag-code-content .token.class-name {
+  color: #8250df;
+}
+
+.muya-host .ag-code-content .token.regex,
+.muya-host .ag-code-content .token.variable {
+  color: #bc4c00;
+}
+
+.muya-host .ag-code-content .token.important {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.muya-host .ag-code-content .token.bold {
+  font-weight: 600;
+}
+
+.muya-host .ag-code-content .token.italic {
+  font-style: italic;
+}
+
+.muya-host .ag-code-content.language-yaml .token.key,
+.muya-host .ag-code-content.language-yaml .token.atrule {
+  color: #0969da;
+}
+
+.muya-host .ag-code-content.language-yaml .token.boolean,
+.muya-host .ag-code-content.language-yaml .token.important {
+  color: #cf222e;
+  font-weight: 600;
+}

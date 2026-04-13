@@ -13,7 +13,15 @@ export type EditorViewMode = 'home' | 'editor'
 export type EditorTabKind = 'untitled' | 'sample' | 'file'
 export type CloseDocumentAction = 'save' | 'discard' | 'cancel'
 export type WindowCloseRequestKind = 'get-dirty-documents' | 'save-all-dirty-documents'
-export type AppCommand = 'new-file' | 'open-file' | 'open-path' | 'save-file' | 'save-file-as'
+export type AppCommand =
+  | 'new-file'
+  | 'open-file'
+  | 'open-path'
+  | 'save-file'
+  | 'save-file-as'
+  | 'undo'
+  | 'redo'
+  | 'search'
 
 export interface RecentDocument {
   pathname: string
@@ -54,7 +62,7 @@ export interface EditorSessionTab {
   savedMarkdown: string
   cursor: unknown
   history: unknown
-  toc: Array<{ content: string, lvl: number }>
+  toc: Array<{ content: string, lvl: number, slug?: string }>
 }
 
 export interface EditorSessionState {
@@ -81,30 +89,37 @@ export interface AppCommandMessage {
   pathname?: string | null
 }
 
+export interface MarkTextAppApi {
+  getBootstrap: () => Promise<AppBootstrap>
+  setDirtyState: (hasDirtyDocuments: boolean) => Promise<void>
+  getSessionState: () => Promise<EditorSessionState | null>
+  setSessionState: (sessionState: EditorSessionState) => Promise<void>
+  confirmCloseDocument: (filename: string) => Promise<CloseDocumentAction>
+  registerAppCommandHandler: (handler: (message: AppCommandMessage) => void) => () => void
+  registerWindowCloseCoordinator: (coordinator: {
+    getDirtyDocuments: () => Promise<DirtyDocumentSummary[]>
+    saveAllDirtyDocuments: () => Promise<boolean>
+  }) => void
+}
+
+export interface MarkTextFilesApi {
+  getRecentDocuments: () => Promise<RecentDocument[]>
+  removeRecentDocument: (pathname: string) => Promise<void>
+  openMarkdown: () => Promise<EditorDocument | null>
+  openMarkdownAtPath: (pathname: string) => Promise<EditorDocument | null>
+  saveMarkdown: (input: SaveDocumentInput) => Promise<SaveDocumentResult | null>
+  saveMarkdownAs: (input: SaveDocumentInput) => Promise<SaveDocumentResult | null>
+}
+
+export interface MarkTextWindowApi {
+  minimize: () => Promise<void>
+  maximize: () => Promise<void>
+  close: () => Promise<void>
+  toggleDevTools: () => Promise<void>
+}
+
 export interface MarkTextApi {
-  app: {
-    getBootstrap: () => Promise<AppBootstrap>
-    setDirtyState: (hasDirtyDocuments: boolean) => Promise<void>
-    getSessionState: () => Promise<EditorSessionState | null>
-    setSessionState: (sessionState: EditorSessionState) => Promise<void>
-    confirmCloseDocument: (filename: string) => Promise<CloseDocumentAction>
-    registerAppCommandHandler: (handler: (message: AppCommandMessage) => void) => () => void
-    registerWindowCloseCoordinator: (coordinator: {
-      getDirtyDocuments: () => Promise<DirtyDocumentSummary[]>
-      saveAllDirtyDocuments: () => Promise<boolean>
-    }) => void
-  }
-  files: {
-    getRecentDocuments: () => Promise<RecentDocument[]>
-    removeRecentDocument: (pathname: string) => Promise<void>
-    openMarkdown: () => Promise<EditorDocument | null>
-    openMarkdownAtPath: (pathname: string) => Promise<EditorDocument | null>
-    saveMarkdown: (input: SaveDocumentInput) => Promise<SaveDocumentResult | null>
-    saveMarkdownAs: (input: SaveDocumentInput) => Promise<SaveDocumentResult | null>
-  }
-  window: {
-    minimize: () => Promise<void>
-    maximize: () => Promise<void>
-    close: () => Promise<void>
-  }
+  app: MarkTextAppApi
+  files: MarkTextFilesApi
+  window: MarkTextWindowApi
 }

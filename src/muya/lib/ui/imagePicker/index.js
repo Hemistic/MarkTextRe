@@ -3,6 +3,7 @@ import { patch, h } from '../../parser/render/snabbdom'
 import FolderIcon from '../../assets/icons/folder.svg'
 import ImageIcon from '../../assets/icons/image.svg'
 import UploadIcon from '../../assets/icons/upload.svg'
+import { getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -27,8 +28,8 @@ class ImagePathPicker extends BaseScrollFloat {
 
   listen () {
     super.listen()
-    const { eventCenter } = this.muya
-    eventCenter.subscribe('muya-image-picker', ({ reference, list, cb }) => {
+    const eventCenter = getMuyaEventCenter(this.muya)
+    eventCenter && eventCenter.subscribe('muya-image-picker', ({ reference, list, cb }) => {
       if (list.length) {
         this.show(reference, cb)
         this.renderArray = list

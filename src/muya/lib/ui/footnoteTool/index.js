@@ -1,6 +1,8 @@
 import BaseFloat from '../baseFloat'
 import { patch, h } from '../../parser/render/snabbdom'
+import { queryContentState } from '../../contentState/runtimeDomSupport'
 import WarningIcon from '../../assets/pngicon/warning/2.png'
+import { getMuyaContentState, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -46,16 +48,16 @@ class LinkTools extends BaseFloat {
     this.footnotes = null
     this.options = opts
     this.hideTimer = null
-    const toolContainer = this.toolContainer = document.createElement('div')
+    const toolContainer = this.toolContainer = this.getOwnerDocument().createElement('div')
     this.container.appendChild(toolContainer)
     this.floatBox.classList.add('ag-footnote-tool-container')
     this.listen()
   }
 
   listen () {
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
     super.listen()
-    eventCenter.subscribe('muya-footnote-tool', ({ reference, identifier, footnotes }) => {
+    eventCenter && eventCenter.subscribe('muya-footnote-tool', ({ reference, identifier, footnotes }) => {
       if (reference) {
         this.footnotes = footnotes
         this.identifier = identifier
@@ -133,15 +135,26 @@ class LinkTools extends BaseFloat {
     event.preventDefault()
     event.stopPropagation()
     const { identifier, footnotes } = this
+    const contentState = getMuyaContentState(this.muya)
     if (hasFootnote) {
       const block = footnotes.get(identifier)
       const key = block.key
-      const ele = document.querySelector(`#${key}`)
-      ele.scrollIntoView({ behavior: 'smooth' })
+      const ele = queryContentState(contentState, `#${key}`)
+      if (ele) {
+        ele.scrollIntoView({ behavior: 'smooth' })
+      }
     } else {
-      this.muya.contentState.createFootnote(identifier)
+      contentState.createFootnote(identifier)
     }
     return this.hide()
+  }
+
+  destroy () {
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer)
+      this.hideTimer = null
+    }
+    super.destroy()
   }
 }
 

@@ -1,19 +1,34 @@
+import type { MarkTextWindowApi } from '@shared/contracts'
 import { getMarkTextApi } from './api'
 
-export const minimizeWindow = async () => {
-  await getMarkTextApi()?.window.minimize?.()
+export interface WindowActions {
+  closeWindow: () => Promise<void>
+  maximizeWindow: () => Promise<void>
+  minimizeWindow: () => Promise<void>
+  toggleDevToolsWindow: () => Promise<void>
 }
 
-export const maximizeWindow = async () => {
-  await getMarkTextApi()?.window.maximize?.()
-}
+type LogError = (message?: unknown, ...optionalParams: unknown[]) => void
 
-export const closeWindow = async () => {
-  const close = getMarkTextApi()?.window.close
-  if (!close) {
-    console.error('[modern] window close bridge is unavailable')
-    return
+const createMissingWindowAction = (logError: LogError, actionName: string) => {
+  return async () => {
+    logError(`[modern] window ${actionName} bridge is unavailable`)
   }
-
-  await close()
 }
+
+export const createWindowActions = (
+  windowApi: MarkTextWindowApi | null | undefined = getMarkTextApi()?.window,
+  logError: LogError = console.error
+): WindowActions => ({
+  minimizeWindow: windowApi?.minimize ?? createMissingWindowAction(logError, 'minimize'),
+  maximizeWindow: windowApi?.maximize ?? createMissingWindowAction(logError, 'maximize'),
+  closeWindow: windowApi?.close ?? createMissingWindowAction(logError, 'close'),
+  toggleDevToolsWindow: windowApi?.toggleDevTools ?? createMissingWindowAction(logError, 'toggle-dev-tools')
+})
+
+export const {
+  minimizeWindow,
+  maximizeWindow,
+  closeWindow,
+  toggleDevToolsWindow
+} = createWindowActions()

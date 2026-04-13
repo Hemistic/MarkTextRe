@@ -42,7 +42,9 @@ class EventCenter {
    * [detachAllDomEvents remove all the DOM events handler]
    */
   detachAllDomEvents () {
-    this.events.forEach(event => this.detachDOMEvent(event.eventId))
+    while (this.events.length) {
+      this.detachDOMEvent(this.events[this.events.length - 1].eventId)
+    }
   }
 
   /**
@@ -73,7 +75,19 @@ class EventCenter {
     if (Array.isArray(listeners) && listeners.find(l => l.listener === listener)) {
       const index = listeners.findIndex(l => l.listener === listener)
       listeners.splice(index, 1)
+      if (listeners.length === 0) {
+        delete this.listeners[event]
+      }
     }
+  }
+
+  clearCustomListeners () {
+    this.listeners = {}
+  }
+
+  destroy () {
+    this.detachAllDomEvents()
+    this.clearCustomListeners()
   }
 
   /**

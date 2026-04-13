@@ -1,3 +1,8 @@
+import {
+  dispatchContentStateChange,
+  dispatchContentStateSelectionChange
+} from './runtimeEventSupport'
+
 const coreApi = ContentState => {
   /**
    * Replace the word range with the given replacement.
@@ -48,8 +53,8 @@ const coreApi = ContentState => {
     }
 
     this.partialRender()
-    this.muya.dispatchSelectionChange()
-    this.muya.dispatchChange()
+    dispatchContentStateSelectionChange(this)
+    dispatchContentStateChange(this)
   }
 }
 

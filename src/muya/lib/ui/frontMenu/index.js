@@ -1,6 +1,7 @@
 import BaseFloat from '../baseFloat'
 import { patch, h } from '../../parser/render/snabbdom'
 import { menu, getSubMenu, getLabel } from './config'
+import { getMuyaContentState, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 
 import './index.css'
 
@@ -31,7 +32,7 @@ class FrontMenu extends BaseFloat {
     this.endBlock = null
     this.options = opts
     this.reference = null
-    const frontMenuContainer = this.frontMenuContainer = document.createElement('div')
+    const frontMenuContainer = this.frontMenuContainer = this.getOwnerDocument().createElement('div')
     Object.assign(this.container.parentNode.style, {
       overflow: 'visible'
     })
@@ -40,9 +41,9 @@ class FrontMenu extends BaseFloat {
   }
 
   listen () {
-    const { eventCenter } = this.muya
+    const eventCenter = getMuyaEventCenter(this.muya)
     super.listen()
-    eventCenter.subscribe('muya-front-menu', ({ reference, outmostBlock, startBlock, endBlock }) => {
+    eventCenter && eventCenter.subscribe('muya-front-menu', ({ reference, outmostBlock, startBlock, endBlock }) => {
       if (reference) {
         this.outmostBlock = outmostBlock
         this.startBlock = startBlock
@@ -62,7 +63,8 @@ class FrontMenu extends BaseFloat {
   renderSubMenu (subMenu) {
     const { reference } = this
     const rect = reference.getBoundingClientRect()
-    const windowHeight = document.documentElement.clientHeight
+    const doc = this.getOwnerDocument()
+    const windowHeight = doc.documentElement.clientHeight
     const children = subMenu.map(menuItem => {
       const { icon, title, label, shortCut } = menuItem
       const iconWrapperSelector = 'div.icon-wrapper'
@@ -151,7 +153,7 @@ class FrontMenu extends BaseFloat {
     if (label === 'duplicate' && type === 'pre' && functionType === 'frontmatter') {
       return
     }
-    const { contentState } = this.muya
+    const contentState = getMuyaContentState(this.muya)
     contentState.selectedBlock = null
     switch (label) {
       case 'duplicate': {

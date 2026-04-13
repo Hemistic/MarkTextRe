@@ -3,6 +3,7 @@ import { patch, h } from '../../parser/render/snabbdom'
 import { deepCopy } from '../../utils'
 import BaseScrollFloat from '../baseScrollFloat'
 import { quickInsertObj } from './config'
+import { getMuyaContentState, getMuyaEventCenter } from '../../muyaRuntimeAccessSupport'
 import './index.css'
 
 class QuickInsert extends BaseScrollFloat {
@@ -93,8 +94,8 @@ class QuickInsert extends BaseScrollFloat {
 
   listen () {
     super.listen()
-    const { eventCenter } = this.muya
-    eventCenter.subscribe('muya-quick-insert', (reference, block, status) => {
+    const eventCenter = getMuyaEventCenter(this.muya)
+    eventCenter && eventCenter.subscribe('muya-quick-insert', (reference, block, status) => {
       if (status) {
         this.block = block
         this.show(reference)
@@ -106,7 +107,7 @@ class QuickInsert extends BaseScrollFloat {
   }
 
   search (text) {
-    const { contentState } = this.muya
+    const contentState = getMuyaContentState(this.muya)
     const canInserFrontMatter = contentState.canInserFrontMatter(this.block)
     const obj = deepCopy(quickInsertObj)
     if (!canInserFrontMatter) {
@@ -124,7 +125,7 @@ class QuickInsert extends BaseScrollFloat {
   }
 
   selectItem (item) {
-    const { contentState } = this.muya
+    const contentState = getMuyaContentState(this.muya)
     this.block.text = ''
     const { key } = this.block
     const offset = 0

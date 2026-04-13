@@ -6,12 +6,14 @@ import DeleteIcon from '../../../assets/pngicon/delete/2.png'
 
 const renderIcon = (h, className, icon) => {
   const selector = `a.${className}`
-  const iconVnode = h('i.icon', h('i.icon-inner', {
-    style: {
-      background: `url(${icon}) no-repeat`,
-      'background-size': '100%'
-    }
-  }, ''))
+  const iconVnode = h('i.icon', {}, [
+    h('i.icon-inner', {
+      style: {
+        background: `url(${icon}) no-repeat`,
+        'background-size': '100%'
+      }
+    }, '')
+  ])
 
   return h(selector, {
     attrs: {

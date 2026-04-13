@@ -4,85 +4,98 @@ import LegacyRecent from '../components/LegacyRecent.vue'
 import LegacySidebar from '../components/LegacySidebar.vue'
 import LegacyTabs from '../components/LegacyTabs.vue'
 import LegacyTitleBar from '../components/LegacyTitleBar.vue'
-import { useEditorWorkspace } from '../features/editor/useEditorWorkspace'
+import { useHomeViewModel } from './useHomeViewModel'
 
 const AsyncMuyaEditor = defineAsyncComponent(() => import('../components/MuyaEditor.vue'))
 
+const { bindings } = useHomeViewModel()
 const {
-  editor,
-  bootstrap,
-  tabs,
-  activeTabId,
-  activeDocument,
-  recentDocuments,
-  headings,
-  sideBarMode,
-  titleFilename,
-  titlePathname,
-  titleDirty,
-  titleWordCount,
-  showHome
-} = useEditorWorkspace()
+  editorHandlers,
+  editorProps,
+  flags,
+  recentHandlers,
+  recentProps,
+  refs,
+  sidebarHandlers,
+  sidebarProps,
+  tabsHandlers,
+  tabsProps,
+  titleBarHandlers,
+  titleBarProps
+} = bindings
 </script>
 
 <template>
   <div class="editor-container">
     <LegacySidebar
-      v-model:mode="sideBarMode"
-      :tabs="tabs"
-      :active-tab-id="activeTabId"
-      :recent-documents="recentDocuments"
-      :headings="headings"
-      @select-tab="editor.setActiveTab"
-      @open-recent="editor.reopenRecentDocument"
-      @open-file="editor.openDocument"
-      @new-file="editor.createTab"
+      :ref="refs.sideBar"
+      :mode="sidebarProps.mode"
+      :tabs="sidebarProps.tabs"
+      :active-tab-id="sidebarProps.activeTabId"
+      :recent-documents="sidebarProps.recentDocuments"
+      :toc-items="sidebarProps.tocItems"
+      :search-query="sidebarProps.searchQuery"
+      :search-total="sidebarProps.searchTotal"
+      :search-active-index="sidebarProps.searchActiveIndex"
+      @update:mode="sidebarHandlers.updateMode"
+      @select-tab="sidebarHandlers.selectTab"
+      @open-recent="sidebarHandlers.openRecent"
+      @open-file="sidebarHandlers.openFile"
+      @new-file="sidebarHandlers.newFile"
+      @select-heading="sidebarHandlers.selectHeading"
+      @update:search-query="sidebarHandlers.updateSearchQuery"
+      @search-next="sidebarHandlers.searchNext"
+      @search-prev="sidebarHandlers.searchPrev"
     />
 
     <div class="editor-middle">
       <LegacyTitleBar
-        :bootstrap="bootstrap"
-        :pathname="titlePathname"
-        :filename="titleFilename"
-        :dirty="titleDirty"
-        :word-count="titleWordCount"
-        :has-document="Boolean(activeDocument)"
-        :show-tab-bar="true"
-        @new-file="editor.createTab"
-        @open-file="editor.openDocument"
-        @save-file="editor.saveActiveDocument"
-        @save-file-as="editor.saveActiveDocumentAs"
+        :bootstrap="titleBarProps.bootstrap"
+        :pathname="titleBarProps.pathname"
+        :filename="titleBarProps.filename"
+        :dirty="titleBarProps.dirty"
+        :word-count="titleBarProps.wordCount"
+        :has-document="titleBarProps.hasDocument"
+        :show-tab-bar="titleBarProps.showTabBar"
+        @new-file="titleBarHandlers.newFile"
+        @open-file="titleBarHandlers.openFile"
+        @save-file="titleBarHandlers.saveFile"
+        @save-file-as="titleBarHandlers.saveFileAs"
+        @toggle-devtools="titleBarHandlers.toggleDevTools"
+        @minimize-window="titleBarHandlers.minimizeWindow"
+        @maximize-window="titleBarHandlers.maximizeWindow"
+        @close-window="titleBarHandlers.closeWindow"
       />
 
       <div class="editor-with-tabs">
         <LegacyTabs
-          v-if="tabs.length > 0"
-          :tabs="tabs"
-          :active-tab-id="activeTabId ?? ''"
-          @select="editor.setActiveTab"
-          @close="editor.closeTab"
-          @create="editor.createTab"
+          v-if="flags.hasTabs"
+          :tabs="tabsProps.tabs"
+          :active-tab-id="tabsProps.activeTabId"
+          @select="tabsHandlers.select"
+          @close="tabsHandlers.close"
+          @create="tabsHandlers.create"
         />
 
         <LegacyRecent
-          v-if="showHome"
-          :recent-documents="recentDocuments"
-          @create="editor.createTab"
-          @open-file="editor.openDocument"
-          @open-recent="editor.reopenRecentDocument"
-          @open-sample="editor.openSampleDocument"
+          v-if="flags.showHome"
+          :recent-documents="recentProps.recentDocuments"
+          @create="recentHandlers.create"
+          @open-file="recentHandlers.openFile"
+          @open-recent="recentHandlers.openRecent"
+          @open-sample="recentHandlers.openSample"
         />
 
-        <div v-else-if="activeDocument" class="editor-content">
+        <div v-else-if="flags.hasActiveDocument" class="editor-content">
           <component
             :is="AsyncMuyaEditor"
-            :key="activeDocument.id"
-            :document-id="activeDocument.id"
-            :model-value="activeDocument.markdown"
-            :cursor="activeDocument.cursor"
-            :history="activeDocument.history"
-            @update:model-value="editor.updateActiveMarkdown"
-            @editor-change="editor.applyActiveEditorState"
+            :ref="refs.muyaEditor"
+            :key="editorProps.documentId"
+            :document-id="editorProps.documentId"
+            :model-value="editorProps.modelValue"
+            :cursor="editorProps.cursor"
+            :history="editorProps.history"
+            @editor-change="editorHandlers.editorChange"
           />
         </div>
       </div>
