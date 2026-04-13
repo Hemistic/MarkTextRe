@@ -1,0 +1,40 @@
+{
+  "app": {
+    "getBootstrap": "marktext:app:get-bootstrap",
+    "setDirtyState": "marktext:app:set-dirty-state",
+    "getSessionState": "marktext:app:get-session-state",
+    "setSessionState": "marktext:app:set-session-state",
+    "confirmCloseDocument": "marktext:app:confirm-close-document",
+    "command": "marktext:app:command",
+    "windowCloseRequest": "marktext:app:window-close-request",
+    "windowCloseResponse": "marktext:app:window-close-response"
+  },
+  "files": {
+    "getRecentDocuments": "marktext:files:get-recent-documents",
+    "removeRecentDocument": "marktext:files:remove-recent-document",
+    "pickOpenPaths": "marktext:files:pick-open-paths",
+    "openMarkdown": "marktext:files:open-markdown",
+    "openMarkdownInNewWindow": "marktext:files:open-markdown-in-new-window",
+    "openMarkdownAtPath": "marktext:files:open-markdown-at-path",
+    "openMarkdownAtPathInNewWindow": "marktext:files:open-markdown-at-path-in-new-window",
+    "openFolder": "marktext:files:open-folder",
+    "openFolderAtPath": "marktext:files:open-folder-at-path",
+    "openFolderInNewWindow": "marktext:files:open-folder-in-new-window",
+    "openFolderAtPathInNewWindow": "marktext:files:open-folder-at-path-in-new-window",
+    "pickImage": "marktext:files:pick-image",
+    "processLocalImage": "marktext:files:process-local-image",
+    "saveMarkdown": "marktext:files:save-markdown",
+    "saveMarkdownAs": "marktext:files:save-markdown-as"
+  },
+  "settings": {
+    "getState": "marktext:settings:get-state",
+    "updateState": "marktext:settings:update-state",
+    "pickPath": "marktext:settings:pick-path"
+  },
+  "window": {
+    "minimize": "marktext:window:minimize",
+    "maximize": "marktext:window:maximize",
+    "close": "marktext:window:close",
+    "toggleDevTools": "marktext:window:toggle-dev-tools"
+  }
+}

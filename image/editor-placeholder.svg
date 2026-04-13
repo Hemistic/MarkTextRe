@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Editor Placeholder</title>
+  <desc id="desc">Placeholder image for editor screenshot.</desc>
+  <rect width="1280" height="720" fill="#f3f4f6" />
+  <rect x="40" y="40" width="1200" height="640" rx="24" fill="#ffffff" stroke="#cbd5e1" />
+  <rect x="40" y="40" width="1200" height="60" rx="24" fill="#e2e8f0" />
+  <rect x="80" y="150" width="260" height="470" rx="16" fill="#e5e7eb" />
+  <rect x="380" y="150" width="790" height="470" rx="16" fill="#f8fafc" stroke="#e5e7eb" />
+  <text x="640" y="110" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="32" fill="#334155">Editor Screenshot Placeholder</text>
+  <text x="640" y="650" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#64748b">Replace image/editor-placeholder.svg later</text>
+</svg>
