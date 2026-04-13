@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   callNativeWindowClose,
   createMissingWindowAction,
-  createWindowAction
+  createWindowAction,
+  createWindowActionInvoker
 } from './windowActionSupport'
 
 describe('windowActionSupport', () => {
@@ -42,5 +43,35 @@ describe('windowActionSupport', () => {
 
     expect(close).toHaveBeenCalledOnce()
     runtimeWindow.close = originalClose
+  })
+
+  it('invokes the resolved window api method via the invoker helper', async () => {
+    const close = vi.fn(async () => {})
+    const logError = vi.fn()
+
+    const action = createWindowActionInvoker(
+      { close } as never,
+      logError,
+      { methodName: 'close', actionName: 'close' }
+    )
+
+    await action()
+    expect(close).toHaveBeenCalledOnce()
+    expect(logError).not.toHaveBeenCalled()
+  })
+
+  it('logs and runs fallback when the window api method is missing', async () => {
+    const logError = vi.fn()
+    const fallback = vi.fn()
+
+    const action = createWindowActionInvoker(
+      null,
+      logError,
+      { methodName: 'close', actionName: 'close', fallback }
+    )
+
+    await action()
+    expect(logError).toHaveBeenCalledWith('[modern] window close bridge is unavailable')
+    expect(fallback).toHaveBeenCalledOnce()
   })
 })

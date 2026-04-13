@@ -1,26 +1,14 @@
 import { getStateRenderContainer } from './runtimeRenderAccessSupport'
 import { resolveEditorRoot } from './runtimeDomRootSupport'
+import { queryFromRoot } from '../utils/domQuerySupport'
 import {
-  getGlobalDocument,
-  queryFromRoot
-} from '../utils/domQuerySupport'
+  getNodeDocument,
+  getNodeWindow
+} from './runtimeDomEnvironmentSupport'
 
 export const getContentStateContainer = contentState => {
   const container = contentState && contentState.muya ? contentState.muya.container : null
   return container && container.isConnected === false ? null : container
-}
-
-export const getNodeDocument = node => {
-  return node && node.ownerDocument
-    ? node.ownerDocument
-    : getGlobalDocument()
-}
-
-export const getNodeWindow = node => {
-  const doc = getNodeDocument(node)
-  return doc && doc.defaultView
-    ? doc.defaultView
-    : (typeof window !== 'undefined' ? window : null)
 }
 
 export const getContentStateDocument = contentState => {
@@ -54,3 +42,5 @@ export const queryStateRenderEditor = (stateRender, selector) => {
   const editor = getStateRenderEditor(stateRender)
   return queryFromRoot(editor, selector)
 }
+
+export { getNodeDocument, getNodeWindow }

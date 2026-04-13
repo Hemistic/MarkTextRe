@@ -1,8 +1,6 @@
 import type { EditorChangePayload } from '../editor/types'
-import {
-  syncMuyaEditorState,
-  type MuyaEditorInstance
-} from './bridge'
+import { syncMuyaEditorState } from './bridge'
+import type { MuyaEditorInstance } from './types'
 
 export interface MuyaSyncState {
   applyingExternalUpdate: boolean

@@ -14,13 +14,13 @@ import {
 import {
   handleDocEnter,
   normalizeSelectionBeforeEnter,
-  handleFootnoteEnter,
-  handleShiftEnter,
-  handleTableEnter,
-  prepareEnterBlock,
-  splitBlockOnEnter,
-  finalizeEnter
 } from './enterHandlerSupport'
+import { handleLanguageInputEnter } from './enterLanguageInputSupport'
+import {
+  resolveEnterCursorBlock,
+  handleEnterPreSplitStage,
+  splitAndFinalizeEnterBlock
+} from './enterCtrlSupport'
 
 /* eslint-disable no-useless-escape */
 const FOOTNOTE_REG = /^\[\^([^\^\[\]\s]+?)(?<!\\)\]:$/
@@ -62,7 +62,7 @@ const enterCtrl = ContentState => {
       return event.preventDefault()
     }
     const { start, end } = cursorContext
-    let block = this.getBlock(start.key)
+    const block = resolveEnterCursorBlock(this, start)
     if (!block) {
       return
     }
@@ -70,9 +70,7 @@ const enterCtrl = ContentState => {
     event.preventDefault()
 
     // Don't allow new lines in language identifiers (GH#569)
-    if (block.functionType && block.functionType === 'languageInput') {
-      // Jump inside the code block and update code language if necessary
-      this.updateCodeLanguage(block, block.text.trim())
+    if (handleLanguageInputEnter(this, block)) {
       return
     }
     // handle select multiple blocks
@@ -80,29 +78,11 @@ const enterCtrl = ContentState => {
       return this.enterHandler(event)
     }
 
-    if (handleFootnoteEnter(this, event, block, start, FOOTNOTE_REG)) {
+    if (handleEnterPreSplitStage(this, event, block, start, FOOTNOTE_REG, isOsx, getFirstBlockInNextRow)) {
       return
     }
 
-    // handle `shift + enter` insert `soft line break` or `hard line break`
-    // only cursor in `line block` can create `soft line break` and `hard line break`
-    // handle line in code block
-    if (handleShiftEnter(this, event, block, start)) {
-      return
-    }
-
-    if (handleTableEnter(this, event, block, isOsx, getFirstBlockInNextRow)) {
-      return
-    }
-
-    const context = prepareEnterBlock(this, block, start)
-    block = context.block
-    const newBlock = splitBlockOnEnter(this, context, start)
-    if (!newBlock) {
-      return
-    }
-
-    finalizeEnter(this, block, newBlock, getParagraphBlock)
+    splitAndFinalizeEnterBlock(this, block, start, getParagraphBlock)
   }
 }
 

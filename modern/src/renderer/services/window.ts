@@ -1,8 +1,9 @@
 import type { MarkTextWindowApi } from '@shared/contracts'
 import {
   callNativeWindowClose,
-  createWindowAction,
-  type LogError
+  createWindowActionInvoker,
+  LogError,
+  type WindowActionInvocationDefinition
 } from './windowActionSupport'
 
 export interface WindowActions {
@@ -15,12 +16,18 @@ export interface WindowActions {
 export const createWindowActions = (
   windowApi: MarkTextWindowApi | null | undefined = undefined,
   logError: LogError = console.error
-): WindowActions => ({
-  minimizeWindow: async () => createWindowAction(windowApi, 'minimize', logError, 'minimize')(),
-  maximizeWindow: async () => createWindowAction(windowApi, 'maximize', logError, 'maximize')(),
-  closeWindow: async () => createWindowAction(windowApi, 'close', logError, 'close', callNativeWindowClose)(),
-  toggleDevToolsWindow: async () => createWindowAction(windowApi, 'toggleDevTools', logError, 'toggle-dev-tools')()
-})
+): WindowActions => {
+  const definitions: Record<keyof WindowActions, WindowActionInvocationDefinition> = {
+    minimizeWindow: { methodName: 'minimize', actionName: 'minimize' },
+    maximizeWindow: { methodName: 'maximize', actionName: 'maximize' },
+    closeWindow: { methodName: 'close', actionName: 'close', fallback: callNativeWindowClose },
+    toggleDevToolsWindow: { methodName: 'toggleDevTools', actionName: 'toggle-dev-tools' }
+  }
+
+  const entries = Object.entries(definitions).map(([key, definition]) => [key, createWindowActionInvoker(windowApi, logError, definition)])
+
+  return Object.fromEntries(entries) as WindowActions
+}
 
 export const {
   minimizeWindow,

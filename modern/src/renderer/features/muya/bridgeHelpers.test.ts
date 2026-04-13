@@ -1,5 +1,5 @@
 import { expect, it, describe } from 'vitest'
-import type { MuyaEditorInstance } from './bridge'
+import type { MuyaEditorInstance } from './types'
 import {
   MUYA_PLUGIN_SLOTS,
   ensureMuyaPluginSlots,

@@ -3,7 +3,7 @@ import type {
   EditorSessionState,
   RecentDocument
 } from '@shared/contracts'
-import { getMarkTextApi } from './api'
+import { getAppApi } from './appApi'
 import { fetchRecentDocuments } from './files'
 
 export interface BootstrapState {
@@ -13,15 +13,15 @@ export interface BootstrapState {
 }
 
 export const loadBootstrapState = async (): Promise<BootstrapState | null> => {
-  const api = getMarkTextApi()
-  if (!api) {
+  const app = getAppApi()
+  if (!app) {
     return null
   }
 
   const [bootstrap, recentDocuments, sessionState] = await Promise.all([
-    api.app.getBootstrap(),
+    app.getBootstrap(),
     fetchRecentDocuments(),
-    api.app.getSessionState()
+    app.getSessionState()
   ])
 
   return {
@@ -32,9 +32,19 @@ export const loadBootstrapState = async (): Promise<BootstrapState | null> => {
 }
 
 export const persistSessionState = async (sessionState: EditorSessionState) => {
-  await getMarkTextApi()?.app.setSessionState(sessionState)
+  const app = getAppApi()
+  if (!app) {
+    return
+  }
+
+  await app.setSessionState(sessionState)
 }
 
 export const syncDirtyState = async (hasDirtyDocuments: boolean) => {
-  await getMarkTextApi()?.app.setDirtyState(hasDirtyDocuments)
+  const app = getAppApi()
+  if (!app) {
+    return
+  }
+
+  await app.setDirtyState(hasDirtyDocuments)
 }

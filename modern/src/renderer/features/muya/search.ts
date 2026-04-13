@@ -1,4 +1,4 @@
-import type { MuyaEditorInstance } from './bridge'
+import type { MuyaEditorInstance } from './types'
 
 export interface MuyaSearchStatus {
   total: number

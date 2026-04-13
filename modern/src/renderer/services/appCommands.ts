@@ -3,23 +3,23 @@ import type {
   CloseDocumentAction,
   WindowCloseCoordinator
 } from '@shared/contracts'
-import { getMarkTextApi } from './api'
+import { getAppApi } from './appApi'
+import {
+  attachWindowCloseCoordinator,
+  registerAppCommandHandlerWithFallback,
+  resolveCloseDocumentAction
+} from './appCommandSupport'
 
 export type AppCommandHandler = (message: AppCommandMessage) => void
 
 export const confirmCloseDocument = async (filename: string): Promise<CloseDocumentAction> => {
-  const api = getMarkTextApi()
-  if (api?.app.confirmCloseDocument) {
-    return api.app.confirmCloseDocument(filename)
-  }
-
-  return window.confirm(`Close ${filename} without saving?`) ? 'discard' : 'cancel'
+  return resolveCloseDocumentAction(getAppApi(), filename)
 }
 
 export const registerWindowCloseCoordinator = (coordinator: WindowCloseCoordinator) => {
-  getMarkTextApi()?.app.registerWindowCloseCoordinator?.(coordinator)
+  attachWindowCloseCoordinator(getAppApi(), coordinator)
 }
 
 export const registerAppCommandHandler = (handler: AppCommandHandler) => {
-  return getMarkTextApi()?.app.registerAppCommandHandler?.(handler) ?? (() => {})
+  return registerAppCommandHandlerWithFallback(getAppApi(), handler)
 }

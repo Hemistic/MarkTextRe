@@ -4,39 +4,28 @@ import type {
   SaveDocumentInput,
   SaveDocumentResult
 } from '@shared/contracts'
-import { getMarkTextApi } from './api'
-
-const saveWith = async (
-  save: ((input: SaveDocumentInput) => Promise<SaveDocumentResult | null>) | undefined,
-  input: SaveDocumentInput
-) => {
-  if (!save) {
-    return null
-  }
-
-  return save(input)
-}
+import { invokeFilesAction, invokeFilesNotification } from './fileApi'
 
 export const fetchRecentDocuments = async (): Promise<RecentDocument[]> => {
-  return getMarkTextApi()?.files.getRecentDocuments() ?? []
+  return invokeFilesAction((files) => files.getRecentDocuments(), [])
 }
 
 export const removeRecentDocument = async (pathname: string) => {
-  await getMarkTextApi()?.files.removeRecentDocument(pathname)
+  await invokeFilesNotification((files) => files.removeRecentDocument(pathname))
 }
 
 export const openMarkdown = async (): Promise<EditorDocument | null> => {
-  return getMarkTextApi()?.files.openMarkdown() ?? null
+  return invokeFilesAction((files) => files.openMarkdown(), null)
 }
 
 export const openMarkdownAtPath = async (pathname: string): Promise<EditorDocument | null> => {
-  return getMarkTextApi()?.files.openMarkdownAtPath(pathname) ?? null
+  return invokeFilesAction((files) => files.openMarkdownAtPath(pathname), null)
 }
 
 export const saveMarkdown = async (input: SaveDocumentInput) => {
-  return saveWith(getMarkTextApi()?.files.saveMarkdown, input)
+  return invokeFilesAction((files) => files.saveMarkdown(input), null)
 }
 
 export const saveMarkdownAs = async (input: SaveDocumentInput) => {
-  return saveWith(getMarkTextApi()?.files.saveMarkdownAs, input)
+  return invokeFilesAction((files) => files.saveMarkdownAs(input), null)
 }

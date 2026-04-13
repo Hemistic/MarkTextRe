@@ -1,10 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import type { EditorChangePayload } from '../features/editor/types'
-import {
-  createMuyaEditor,
-  getMuyaErrorMessage,
-  type MuyaEditorInstance
-} from '../features/muya/bridge'
+import { createMuyaEditor, getMuyaErrorMessage } from '../features/muya/bridge'
+import type { MuyaEditorInstance } from '../features/muya/types'
 import {
   createMuyaSyncState,
   handleMuyaChange,

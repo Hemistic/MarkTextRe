@@ -3,6 +3,12 @@ import { getMarkTextApi } from './api'
 
 export type LogError = (message?: unknown, ...optionalParams: unknown[]) => void
 
+export interface WindowActionInvocationDefinition {
+  methodName: keyof MarkTextWindowApi
+  actionName: string
+  fallback?: () => void
+}
+
 export const callNativeWindowClose = () => {
   if (typeof window !== 'undefined' && typeof window.close === 'function') {
     window.close()
@@ -36,4 +42,22 @@ export const createWindowAction = (
 ) => {
   return resolveWindowApiMethod(windowApi, methodName)
     ?? createMissingWindowAction(logError, actionName, fallback)
+}
+
+export const createWindowActionInvoker = (
+  windowApi: MarkTextWindowApi | null | undefined,
+  logError: LogError,
+  definition: WindowActionInvocationDefinition
+) => {
+  return async () => {
+    const action = createWindowAction(
+      windowApi,
+      definition.methodName,
+      logError,
+      definition.actionName,
+      definition.fallback
+    )
+
+    await action()
+  }
 }

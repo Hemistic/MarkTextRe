@@ -234,16 +234,21 @@ modern/
   - 打开 / 重开 / 保存 / 关闭 tab 共用 `state.ts` 中的 workspace/status helper
   - recent document 追踪与 dirty tab close 决策已继续下沉到 `commandSupport.ts`
   - 不再在 `commands.ts` 里重复手写 tab / activeTabId / viewMode / recent / status 更新
+  - `commandsWorkflowSupport.ts` 已接管 bridge 可用性守卫与 open/reopen/save/close workflow 编排，`commands.ts` 继续收缩为公开命令入口层
 - `renderer` 侧 store 壳已继续变薄：
   - `stores/editor.ts` 仅保留 Pinia 注册
   - `runtime.ts` 负责 editor 运行时状态装配与命令编排
 - `renderer` 侧 bridge service 已按职责切分：
   - `services/api.ts`
+  - `services/appApi.ts` 已收口 `window.marktext.app` bridge 访问与空桥接保护
   - `services/appCommands.ts`
+  - `services/appCommandSupport.ts` 已拆出 close confirm fallback、window close coordinator 注册与 app command handler 安全注册
   - `services/appState.ts`
+  - `services/fileApi.ts` 已收口 `window.marktext.files` bridge 访问、action 调用与通知型调用兜底
   - `services/files.ts`
   - `services/window.ts`
   - `services/windowActionSupport.ts` 已拆出窗口 bridge 解析、缺失 action fallback 与浏览器关闭兜底
+  - `services/files.ts` 已收口 `getFilesApi()`、`invokeFileAction()`、`invokeFileNotification()`，文件 bridge fallback 不再散落在各个导出函数里
 - `renderer` 侧文件命令链已继续 adapter 化：
   - `commandsRuntimeServices.ts` 已统一 bridge、关闭确认、文件打开/保存、recent remove 依赖
   - `filesRuntimeServices.ts` 已接管文件打开/保存 bridge service 装配
@@ -330,7 +335,9 @@ modern/
   - `src/muya/lib/contentState/enterEventSupport.js` 已缩成薄转发层，图片选中回车、选区收敛、shift-enter、自增 table row/跳转 已拆到 `enterImageEventSupport.js`、`enterSelectionEventSupport.js`、`enterShiftSupport.js`、`enterTableEventSupport.js`
   - `src/muya/lib/contentState/backspaceCursorSupport.js` 已缩成薄转发层，inline image 回退、cell/code/footnote 边界回退、inline degrade/向前合并 已拆到 `backspaceImageCursorSupport.js`、`backspaceBlockBoundarySupport.js`、`backspaceMergeSupport.js`
   - `src/muya/lib/contentState/backspaceBlockBoundarySupport.js` 已继续缩成出口层，cell 边界、footnote 边界 与 code block 起点回退 已拆到 `backspaceCellBoundarySupport.js`、`backspaceFootnoteSupport.js`、`backspaceCodeBlockSupport.js`
+  - `src/muya/lib/contentState/backspaceCtrl.js` 已继续收口为入口层，selection 阶段与 collapsed 阶段编排已拆到 `backspaceCtrlSupport.js`
   - `src/muya/lib/contentState/enterSplitSupport.js` 已缩成薄转发层，enter 上下文提取、块拆分、焦点/光标收尾 已拆到 `enterContextSupport.js`、`enterBlockSplitSupport.js`、`enterFinalizeSupport.js`
+  - `src/muya/lib/contentState/enterCtrl.js` 已继续收口为入口层，enter 预处理分支与 split/finalize 编排已拆到 `enterCtrlSupport.js`
   - `src/muya/lib/contentState/enterSupport.js` 已继续缩成薄转发层，block 切分、list item 创建、空段落回车退出与 table row 后续块定位 已拆到 `enterBlockSliceSupport.js`、`enterListItemSupport.js`、`enterParagraphSupport.js`
   - `src/muya/lib/contentState/enterParagraphSupport.js` 已继续缩成出口层，空段落退出 与 table row 后续块定位/段落块解析 已拆到 `enterParagraphExitSupport.js`、`enterParagraphTableSupport.js`
   - `src/muya/lib/contentState/paragraphBlockTransforms.js` 已缩成薄转发层，code block 菜单转换、container block 插入、HTML block 初始化 已拆到 `paragraphCodeBlockSupport.js`、`paragraphContainerSupport.js`、`paragraphHtmlBlockSupport.js`
@@ -393,6 +400,9 @@ modern/
   - 组件本身只保留实例生命周期、props 同步与事件桥接
   - `bridgeHelpers.ts` 已拆出 legacy default export 解包与 plugin slot 兜底，`bridge.ts` 继续向纯边界层收口
   - `sync.ts` 已拆出 `shouldEmitModelUpdateForChange()`，Muya -> model 的回写判定开始从同步主链里独立出来
+  - `editorOptions.ts` 已拆出默认 Muya 编辑器选项工厂，`bridge.ts` 继续向实例装配层收缩
+  - `types.ts` 已收口 Muya editor constructor / instance 契约，周边 helper 不再反向依赖 `bridge.ts`
+  - `editorLifecycle.ts` 已拆出实例创建、ready 等待与 change 绑定，`bridge.ts` 进一步收缩为构造器加载与初始化编排层
 - `main` 侧 IPC 注册已开始按职责拆分：
   - `app-handlers.ts`
   - `file-handlers.ts`
@@ -440,6 +450,9 @@ modern/
   - `homeEditorCommands.test.ts`
   - `homeEditorBindings.test.ts`
   - `bridge.test.ts`
+  - `editorLifecycle.test.ts`
+  - `fileApi.test.ts`
+  - `commandsWorkflowSupport.test.ts`
   - `close-flow.test.ts`
   - `close-dialogs.test.ts`
   - `window-close-state.test.ts`
@@ -450,7 +463,7 @@ modern/
 - 当前结构改动的最小回归验证基线固定为：
   - `npm --prefix modern run test`
   - `npm run modern:build`
-  - 当前基线结果为 `65` 个测试文件、`217` 个测试通过
+  - 当前基线结果为 `71` 个测试文件、`232` 个测试通过
   - `chunks.test.ts`
   - 当前已覆盖 recent document、tab 切换、打开/保存/关闭命令流、dirty close 决策、窗口关闭状态机、窗口状态归一化/持久化辅助、session 恢复、IPC 序列化清洗、Muya bridge/sync 和 chunk 归组等无副作用逻辑
 - dev/build 已稳定可跑，`npm run modern:build` 当前可通过
@@ -488,7 +501,7 @@ modern/
   - 浏览器预览模式仍保留 `keydown` 回退，不依赖 Electron 菜单
   - 最近文件菜单会在打开/保存/移除最近文件后由主进程自动刷新
 - 自动化验证不再完全为零：
-  - `npm --prefix modern run test` 当前可通过，基线已提升到 `123/123`
+  - `npm --prefix modern run test` 当前可通过，基线已提升到 `71/232`
   - 但仍只覆盖 editor 域纯函数，尚未进入 Electron 启动/关闭/文件流集成回归
 - 主进程残余编排已继续收口：
   - `close-manager.ts` 已从窗口关闭决策中剥离出 `close-flow.ts`
@@ -598,7 +611,7 @@ modern/
   - 覆盖 workspace、editor commands、session serialization 等不依赖 Electron 窗口的路径
 - 通过标准：
   - 测试必须全绿
-  - 当前基线应保持 `92/92` 通过
+  - 当前基线应保持 `71/232` 通过
 
 ### 构建验证
 
